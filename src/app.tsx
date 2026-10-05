@@ -1,7 +1,7 @@
-import type { AgentEvent } from "@earendil-works/pi-durable";
-import { useEffect, useState } from "preact/hooks";
-import { connectToAgent, createAgent, listAgents, messagesFromSnapshot, submitInput, type Agent } from "./client";
-import { Composer, SessionHeader, Sidebar, Transcript, type Message, type ModelOption } from "./components";
+import { useEffect, useReducer, useState } from "preact/hooks";
+import { connectToAgent, createAgent, listAgents, submitInput, type Agent } from "./client";
+import { Composer, SessionHeader, Sidebar, Transcript, type ModelOption } from "./components";
+import { initialLiveState, reduceAgentEvent } from "./live";
 
 const models: ModelOption[] = [
   { id: "anthropic/claude-sonnet-4-6", label: "claude-sonnet-4-6" },
@@ -12,7 +12,7 @@ const models: ModelOption[] = [
 export function App() {
   const [agents, setAgents] = useState<Agent[]>([]);
   const [selectedId, setSelectedId] = useState<number>();
-  const [messages, setMessages] = useState<Message[]>([]);
+  const [live, dispatch] = useReducer(reduceAgentEvent, initialLiveState);
   const [draft, setDraft] = useState("");
   const [model, setModel] = useState(models[0].id);
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -26,14 +26,7 @@ export function App() {
 
   useEffect(() => {
     if (selectedId === undefined) return;
-    setMessages([]);
-    return connectToAgent(selectedId, (event: AgentEvent) => {
-      if (event.type === "snapshot") setMessages(messagesFromSnapshot(event));
-      if (event.type === "message_end") {
-        const snapshot = { type: "snapshot", entries: [event.entry], tools: [], compactions: [], inbox: [], agent: {}, usage: { models: {}, tools: {} } } as never;
-        setMessages((current) => [...current, ...messagesFromSnapshot(snapshot)]);
-      }
-    });
+    return connectToAgent(selectedId, dispatch);
   }, [selectedId]);
 
   const selected = agents.find((agent) => agent.id === selectedId);
@@ -69,8 +62,9 @@ export function App() {
           model={model}
           onModelChange={setModel}
           onOpenAgents={() => setSidebarOpen(true)}
+          running={live.running}
         />
-        <Transcript messages={messages} showExampleTool={false} />
+        <Transcript messages={live.messages} partial={live.partial} tools={live.tools} showExampleTool={false} />
         <Composer value={draft} onInput={setDraft} onSubmit={send} />
       </main>
     </div>

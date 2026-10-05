@@ -58,6 +58,8 @@ button { cursor: pointer; }
 .sidebar-footer { display: flex; align-items: center; gap: .5rem; padding: .75rem 1rem; border-top: 1px solid var(--border); color: var(--faint); font-size: var(--fs-tiny); }
 .connection-state { display: flex; align-items: center; gap: .5rem; }
 .connection-state i, .run-state i, .running i, .done i { display: inline-block; width: 5px; height: 5px; background: var(--green); }
+.run-state[data-state="idle"] { color: var(--faint); }
+.run-state[data-state="idle"] i { background: var(--faint); }
 
 .chat { min-width: 0; display: grid; grid-template-rows: auto minmax(0, 1fr) auto; background: var(--bg); }
 .chat-header { gap: .875rem; padding: 0 1.25rem; }
@@ -82,7 +84,7 @@ button { cursor: pointer; }
 .tool-head .running { margin-left: auto; }
 .tool-command { display: block; padding: .55rem .75rem; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); background: rgb(26 27 38 / 72%); color: var(--ink); font-size: var(--fs-small); line-height: 1.6; }
 .tool-command span { color: var(--accent); font-weight: 700; }
-.tool-output { margin: 0; padding: .5rem .75rem .55rem; color: var(--muted); font-size: var(--fs-tiny); line-height: 1.6; }
+.tool-output { margin: 0; padding: .5rem .75rem .55rem; overflow-x: auto; color: var(--muted); font: inherit; font-size: var(--fs-tiny); line-height: 1.6; white-space: pre-wrap; }
 .tool-output span { color: var(--green); }
 
 .composer-wrap { padding: 0 2rem 1.25rem; background: var(--bg); }
