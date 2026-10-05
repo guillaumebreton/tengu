@@ -39,15 +39,15 @@ export function App() {
 
   return (
     <div class="shell">
-      <button class="scrim" aria-label="Close conversations" data-open={sidebarOpen} onClick={() => setSidebarOpen(false)} />
+      <button class="scrim" aria-label="Close agents" data-open={sidebarOpen} onClick={() => setSidebarOpen(false)} />
       <aside class="sidebar" data-open={sidebarOpen}>
         <header class="brand">
           <strong>tengu</strong>
-          <button class="new-chat" aria-label="New conversation">new</button>
+          <button class="new-chat" aria-label="New agent">new</button>
         </header>
 
-        <nav aria-label="Conversations">
-          <p class="section-label">conversations</p>
+        <nav aria-label="Agents">
+          <p class="section-label">agents</p>
           <div class="conversation-list">
             {conversations.map((conversation) => (
               <button class="conversation" data-active={conversation.active} onClick={() => setSidebarOpen(false)}>
@@ -69,7 +69,7 @@ export function App() {
 
       <main class="chat">
         <header class="chat-header">
-          <button class="menu-button" aria-label="Open conversations" onClick={() => setSidebarOpen(true)}>☰</button>
+          <button class="menu-button" aria-label="Open agents" onClick={() => setSidebarOpen(true)}>☰</button>
           <h1>Fix the flaky login test</h1>
           <label class="model-picker">
             <span>model</span>

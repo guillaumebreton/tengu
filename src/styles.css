@@ -44,16 +44,16 @@ button { cursor: pointer; }
 .sidebar nav::-webkit-scrollbar { display: none; }
 .section-label { margin: 0 .5rem .55rem; color: var(--faint); font-size: var(--fs-tiny); font-weight: 500; }
 .conversation-list { display: grid; gap: .125rem; }
-.conversation { display: flex; width: 100%; gap: .5rem; align-items: flex-start; padding: .6rem .5rem; border: 0; background: transparent; text-align: left; }
+.conversation { display: flex; width: 100%; min-width: 0; gap: .5rem; align-items: flex-start; padding: .6rem .5rem; border: 0; background: transparent; text-align: left; overflow: hidden; }
 .conversation:hover { background: var(--raised); }
 .conversation[data-active="true"] { background: var(--raised); }
 .conversation[data-active="true"]::before { content: "›"; color: var(--accent); font-weight: 700; }
-.conversation-copy { min-width: 0; flex: 1; }
+.conversation-copy { min-width: 0; max-width: 100%; flex: 1 1 0; overflow: hidden; }
 .conversation strong, .conversation small { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .conversation strong { color: var(--body); font-size: var(--fs-body); font-weight: 500; }
 .conversation[data-active="true"] strong { color: var(--ink); }
 .conversation small { margin-top: .25rem; color: var(--faint); font-size: var(--fs-tiny); }
-.conversation time { color: var(--faint); font-size: .5625rem; }
+.conversation time { flex: 0 0 auto; color: var(--faint); font-size: .5625rem; }
 .sidebar-footer { display: flex; align-items: center; gap: .5rem; padding: .75rem 1rem; border-top: 1px solid var(--border); color: var(--faint); font-size: var(--fs-tiny); }
 .status-dot, .run-state i, .running i { display: inline-block; width: 5px; height: 5px; background: var(--green); }
 
