@@ -18,6 +18,7 @@ import { CodingTools } from "@earendil-works/pi-durable/tools";
 const context = BACKGROUND_CONTEXT;
 
 export type Runtime = {
+  listConversations(): Promise<readonly ConversationId[]>;
   createConversation(): Promise<Conversation>;
   conversation(id: ConversationId): Promise<Conversation>;
   submit(id: ConversationId, content: string): Promise<SettledSubmissionRecord>;
@@ -46,8 +47,9 @@ export async function openRuntime({
   registry.install(CodingTools);
   registry.install(Tengu);
 
+  const storage = await openNodeSqliteStorage(database);
   const harness = await Harness.open(
-    await openNodeSqliteStorage(database),
+    storage,
     {
       models,
       registry,
@@ -64,6 +66,11 @@ export async function openRuntime({
   };
 
   return {
+    async listConversations() {
+      return (await storage.scanConversations({}, 100, undefined, context)).items
+        .filter((conversation) => conversation.owner === undefined)
+        .map((conversation) => conversation.id);
+    },
     createConversation: () =>
       harness.createConversation(
         {
