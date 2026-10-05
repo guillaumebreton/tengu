@@ -26,11 +26,15 @@ export function Sidebar({
   activeAgentId,
   open,
   onClose,
+  onCreate,
+  onSelect,
 }: {
   agents: AgentSummary[];
   activeAgentId: string;
   open: boolean;
   onClose: () => void;
+  onCreate: () => void;
+  onSelect: (id: string) => void;
 }) {
   return (
     <>
@@ -38,13 +42,13 @@ export function Sidebar({
       <aside class="sidebar" data-open={open}>
         <header class="brand">
           <strong>tengu</strong>
-          <button class="new-chat" aria-label="New agent">new</button>
+          <button class="new-chat" aria-label="New agent" onClick={onCreate}>new</button>
         </header>
         <nav aria-label="Agents">
           <p class="section-label">agents</p>
           <div class="conversation-list">
             {agents.map((agent) => (
-              <button class="conversation" data-active={agent.id === activeAgentId} onClick={onClose} key={agent.id}>
+              <button class="conversation" data-active={agent.id === activeAgentId} onClick={() => { onSelect(agent.id); onClose(); }} key={agent.id}>
                 <span class="conversation-marker" aria-hidden="true">›</span>
                 <span class="conversation-copy">
                   <strong>{agent.title}</strong>
@@ -89,20 +93,22 @@ export function SessionHeader({
   );
 }
 
-export function Transcript({ messages }: { messages: Message[] }) {
+export function Transcript({ messages, showExampleTool = true }: { messages: Message[]; showExampleTool?: boolean }) {
   return (
     <section class="transcript" aria-live="polite">
       {messages.map((message, index) => (
         <MessageRow message={message} key={`${message.role}-${index}`} />
       ))}
-      <MessageFrame speaker="tengu" role="assistant">
-        <ToolCall
-          name="bash"
-          command="npm test -- login.test.ts"
-          output="17 passed · retrying focused test…"
-          state="running"
-        />
-      </MessageFrame>
+      {showExampleTool && (
+        <MessageFrame speaker="tengu" role="assistant">
+          <ToolCall
+            name="bash"
+            command="npm test -- login.test.ts"
+            output="17 passed · retrying focused test…"
+            state="running"
+          />
+        </MessageFrame>
+      )}
     </section>
   );
 }

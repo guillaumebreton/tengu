@@ -19,8 +19,10 @@ import { CodingTools } from "@earendil-works/pi-durable/tools";
 
 const context = BACKGROUND_CONTEXT;
 
+export type AgentSummary = { id: ConversationId; title: string; preview: string };
+
 export type Runtime = {
-  listConversations(): Promise<readonly ConversationId[]>;
+  listConversations(): Promise<readonly AgentSummary[]>;
   createConversation(): Promise<Conversation>;
   conversation(id: ConversationId): Promise<Conversation>;
   submit(id: ConversationId, content: string): Promise<SettledSubmissionRecord>;
@@ -70,9 +72,23 @@ export async function openRuntime({
 
   return {
     async listConversations() {
-      return (await storage.scanConversations({}, 100, undefined, context)).items
-        .filter((conversation) => conversation.owner === undefined)
-        .map((conversation) => conversation.id);
+      const records = (await storage.scanConversations({}, 100, undefined, context)).items
+        .filter((conversation) => conversation.owner === undefined);
+      return Promise.all(records.map(async ({ id }) => {
+        const conversation = await getConversation(id);
+        const entries = (await conversation.entries({}, 20, undefined, context)).items;
+        const messages = entries
+          .flatMap((entry) => entry.model ?? [])
+          .filter((message) => message.role === "user" || message.role === "assistant");
+        const text = (message: (typeof messages)[number] | undefined) => {
+          if (!message) return "";
+          return typeof message.content === "string"
+            ? message.content
+            : message.content.filter((part) => part.type === "text").map((part) => part.text).join("");
+        };
+        const firstUser = [...messages].reverse().find((message) => message.role === "user");
+        return { id, title: text(firstUser) || "New agent", preview: text(messages[0]) };
+      }));
     },
     createConversation: () =>
       harness.createConversation(
