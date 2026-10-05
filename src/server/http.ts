@@ -1,7 +1,10 @@
+import { createReadStream } from "node:fs";
+import { access } from "node:fs/promises";
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
+import { extname, join, normalize } from "node:path";
 import { BACKGROUND_CONTEXT } from "@earendil-works/chord/context";
 import type { ConversationId } from "@earendil-works/pi-durable";
-import type { Runtime } from "./runtime";
+import type { Runtime } from "./runtime.js";
 
 const MAX_BODY_BYTES = 64 * 1024;
 
@@ -32,7 +35,28 @@ function writeEvent(response: ServerResponse, event: unknown) {
   response.write(`data: ${JSON.stringify(event)}\n\n`);
 }
 
-export function createHttpServer(runtime: Runtime) {
+const contentTypes: Record<string, string> = {
+  ".css": "text/css; charset=utf-8",
+  ".html": "text/html; charset=utf-8",
+  ".js": "text/javascript; charset=utf-8",
+  ".svg": "image/svg+xml",
+};
+
+async function serveFile(response: ServerResponse, directory: string, pathname: string): Promise<boolean> {
+  const relative = normalize(pathname).replace(/^[/\\]+/, "");
+  const file = join(directory, relative || "index.html");
+  if (!file.startsWith(`${normalize(directory)}/`)) return false;
+  try {
+    await access(file);
+  } catch {
+    return false;
+  }
+  response.writeHead(200, { "content-type": contentTypes[extname(file)] ?? "application/octet-stream" });
+  createReadStream(file).pipe(response);
+  return true;
+}
+
+export function createHttpServer(runtime: Runtime, publicDirectory?: string) {
   return createServer(async (request, response) => {
     try {
       const url = new URL(request.url ?? "/", "http://localhost");
@@ -84,6 +108,11 @@ export function createHttpServer(runtime: Runtime) {
         );
         json(response, 202, await submission.status(BACKGROUND_CONTEXT));
         return;
+      }
+
+      if (request.method === "GET" && publicDirectory) {
+        if (await serveFile(response, publicDirectory, url.pathname)) return;
+        if (await serveFile(response, publicDirectory, "/index.html")) return;
       }
 
       json(response, 404, { error: "not found" });

@@ -1,5 +1,5 @@
 // @vitest-environment node
-import { mkdtemp, rm } from "node:fs/promises";
+import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fauxAssistantMessage, fauxProvider } from "@earendil-works/pi-ai/providers/faux";
@@ -99,6 +99,33 @@ describe("HTTP API", () => {
     expect(reconnectSnapshot).toContain('"type":"snapshot"');
     expect(reconnectSnapshot).toContain("Streamed.");
     await reconnectReader.cancel();
+  });
+
+  it("serves static assets and falls back to the application shell", async () => {
+    const directory = await mkdtemp(join(tmpdir(), "tengu-static-"));
+    const publicDirectory = join(directory, "public");
+    await import("node:fs/promises").then(({ mkdir }) => mkdir(publicDirectory));
+    await writeFile(join(publicDirectory, "index.html"), "<main>Tengu</main>");
+    await writeFile(join(publicDirectory, "app.js"), "console.log('tengu')");
+    const faux = fauxProvider();
+    const runtime = await openRuntime({
+      database: join(directory, "tengu.sqlite"),
+      workspace: join(directory, "workspace"),
+      provider: faux.provider,
+    });
+    const server = createHttpServer(runtime, publicDirectory);
+    await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", resolve));
+    const address = server.address();
+    if (!address || typeof address === "string") throw new Error("Server did not bind");
+    const base = `http://127.0.0.1:${address.port}`;
+    cleanups.push(async () => {
+      await new Promise<void>((resolve, reject) => server.close((error) => error ? reject(error) : resolve()));
+      await runtime.close();
+      await rm(directory, { recursive: true, force: true });
+    });
+
+    expect(await (await fetch(`${base}/app.js`)).text()).toBe("console.log('tengu')");
+    expect(await (await fetch(`${base}/agents/1`)).text()).toBe("<main>Tengu</main>");
   });
 
   it("rejects invalid JSON input", async () => {
