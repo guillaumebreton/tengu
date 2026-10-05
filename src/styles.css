@@ -47,7 +47,8 @@ button { cursor: pointer; }
 .conversation { display: flex; width: 100%; min-width: 0; gap: .5rem; align-items: flex-start; padding: .6rem .5rem; border: 0; background: transparent; text-align: left; overflow: hidden; }
 .conversation:hover { background: var(--raised); }
 .conversation[data-active="true"] { background: var(--raised); }
-.conversation[data-active="true"]::before { content: "›"; color: var(--accent); font-weight: 700; }
+.conversation-marker { flex: 0 0 .5rem; color: transparent; font-weight: 700; }
+.conversation[data-active="true"] .conversation-marker { color: var(--accent); }
 .conversation-copy { min-width: 0; max-width: 100%; flex: 1 1 0; overflow: hidden; }
 .conversation strong, .conversation small { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .conversation strong { color: var(--body); font-size: var(--fs-body); font-weight: 500; }

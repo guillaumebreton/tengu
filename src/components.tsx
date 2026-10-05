@@ -45,6 +45,7 @@ export function Sidebar({
           <div class="conversation-list">
             {agents.map((agent) => (
               <button class="conversation" data-active={agent.id === activeAgentId} onClick={onClose} key={agent.id}>
+                <span class="conversation-marker" aria-hidden="true">›</span>
                 <span class="conversation-copy">
                   <strong>{agent.title}</strong>
                   <small>{agent.preview}</small>
