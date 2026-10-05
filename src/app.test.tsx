@@ -7,6 +7,13 @@ describe("App", () => {
     render(<App />);
 
     expect(screen.getByRole("heading", { name: "Fix the flaky login test" })).toBeInTheDocument();
+    expect(screen.queryByText(/October/)).not.toBeInTheDocument();
+    expect(screen.getByRole("combobox", { name: "Model" })).toHaveValue("anthropic/claude-sonnet-4-6");
+
+    fireEvent.change(screen.getByRole("combobox", { name: "Model" }), {
+      target: { value: "openai/gpt-5.4" },
+    });
+    expect(screen.getByRole("combobox", { name: "Model" })).toHaveValue("openai/gpt-5.4");
 
     const composer = screen.getByRole("textbox", { name: "Message Tengu" });
     fireEvent.input(composer, { target: { value: "Run the focused test again" } });
