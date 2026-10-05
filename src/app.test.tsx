@@ -9,6 +9,7 @@ describe("App", () => {
     expect(screen.getByRole("heading", { name: "Fix the flaky login test" })).toBeInTheDocument();
     expect(screen.queryByText(/October/)).not.toBeInTheDocument();
     expect(screen.getByRole("combobox", { name: "Model" })).toHaveValue("anthropic/claude-sonnet-4-6");
+    expect(screen.getByText("npm test -- login.test.ts").closest("code")).toHaveClass("tool-command");
 
     fireEvent.change(screen.getByRole("combobox", { name: "Model" }), {
       target: { value: "openai/gpt-5.4" },
