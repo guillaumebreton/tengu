@@ -55,7 +55,8 @@ button { cursor: pointer; }
 .conversation small { margin-top: .25rem; color: var(--faint); font-size: var(--fs-tiny); }
 .conversation time { flex: 0 0 auto; color: var(--faint); font-size: .5625rem; }
 .sidebar-footer { display: flex; align-items: center; gap: .5rem; padding: .75rem 1rem; border-top: 1px solid var(--border); color: var(--faint); font-size: var(--fs-tiny); }
-.status-dot, .run-state i, .running i { display: inline-block; width: 5px; height: 5px; background: var(--green); }
+.connection-state { display: flex; align-items: center; gap: .5rem; }
+.connection-state i, .run-state i, .running i, .done i { display: inline-block; width: 5px; height: 5px; background: var(--green); }
 
 .chat { min-width: 0; display: grid; grid-template-rows: auto minmax(0, 1fr) auto; background: var(--bg); }
 .chat-header { gap: .875rem; padding: 0 1.25rem; }
