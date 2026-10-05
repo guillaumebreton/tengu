@@ -50,6 +50,57 @@ describe("HTTP API", () => {
     expect(await inputResponse.json()).toMatchObject({ status: "placed" });
   });
 
+  it("streams a snapshot and committed agent events", async () => {
+    const directory = await mkdtemp(join(tmpdir(), "tengu-events-"));
+    const faux = fauxProvider();
+    faux.setResponses([fauxAssistantMessage("Streamed.")]);
+    const runtime = await openRuntime({
+      database: join(directory, "tengu.sqlite"),
+      workspace: join(directory, "workspace"),
+      provider: faux.provider,
+    });
+    const conversation = await runtime.createConversation();
+    const server = createHttpServer(runtime);
+    await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", resolve));
+    const address = server.address();
+    if (!address || typeof address === "string") throw new Error("Server did not bind");
+    cleanups.push(async () => {
+      await new Promise<void>((resolve, reject) => server.close((error) => error ? reject(error) : resolve()));
+      await runtime.close();
+      await rm(directory, { recursive: true, force: true });
+    });
+
+    const controller = new AbortController();
+    const response = await fetch(`http://127.0.0.1:${address.port}/api/agents/${conversation.id}/events`, {
+      signal: controller.signal,
+    });
+    expect(response.headers.get("content-type")).toBe("text/event-stream; charset=utf-8");
+    const reader = response.body!.getReader();
+    const decoder = new TextDecoder();
+    let received = decoder.decode((await reader.read()).value);
+    expect(received).toContain('"type":"snapshot"');
+
+    await fetch(`http://127.0.0.1:${address.port}/api/agents/${conversation.id}/input`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ content: "Stream this", requestId: "stream-1" }),
+    });
+    while (!received.includes('"type":"message_end"')) {
+      const chunk = await reader.read();
+      if (chunk.done) break;
+      received += decoder.decode(chunk.value);
+    }
+    expect(received).toContain('"type":"message_end"');
+    controller.abort();
+
+    const reconnected = await fetch(`http://127.0.0.1:${address.port}/api/agents/${conversation.id}/events`);
+    const reconnectReader = reconnected.body!.getReader();
+    const reconnectSnapshot = decoder.decode((await reconnectReader.read()).value);
+    expect(reconnectSnapshot).toContain('"type":"snapshot"');
+    expect(reconnectSnapshot).toContain("Streamed.");
+    await reconnectReader.cancel();
+  });
+
   it("rejects invalid JSON input", async () => {
     const directory = await mkdtemp(join(tmpdir(), "tengu-http-"));
     const faux = fauxProvider();
