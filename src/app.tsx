@@ -43,7 +43,7 @@ export function App() {
       <aside class="sidebar" data-open={sidebarOpen}>
         <header class="brand">
           <strong>tengu</strong>
-          <button class="new-chat" aria-label="New conversation">+</button>
+          <button class="new-chat" aria-label="New conversation">new</button>
         </header>
 
         <nav aria-label="Conversations">
@@ -90,12 +90,12 @@ export function App() {
 
           <article class="message assistant">
             <p class="speaker">tengu</p>
-            <div class="tool-card">
+            <div class="tool-call">
               <div class="tool-head">
-                <strong>$ bash</strong>
+                <strong>bash</strong>
                 <span class="running"><i /> running</span>
               </div>
-              <code>npm test -- login.test.ts</code>
+              <code><span>$</span> npm test -- login.test.ts</code>
               <p>17 passed · retrying focused test…</p>
             </div>
           </article>
@@ -106,7 +106,7 @@ export function App() {
             <textarea
               rows={2}
               aria-label="Message Tengu"
-              placeholder="Message Tengu..."
+              placeholder="Type a message..."
               value={draft}
               onInput={(event) => setDraft(event.currentTarget.value)}
               onKeyDown={(event) => {
@@ -118,7 +118,7 @@ export function App() {
             />
             <div class="composer-actions">
               <span>enter to send · shift+enter for newline</span>
-              <button type="submit" aria-label="Send message" disabled={!draft.trim()}>send</button>
+              <button type="submit" aria-label="Send message" disabled={!draft.trim()}>send ↵</button>
             </div>
           </form>
         </div>
