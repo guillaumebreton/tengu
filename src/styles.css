@@ -73,14 +73,15 @@ button { cursor: pointer; }
 .message > p:last-child { margin: 0; color: var(--body); line-height: 1.65; }
 .message.user .speaker { color: var(--accent); }
 .message.assistant .speaker { color: var(--green); }
-.tool-call { width: 100%; }
-.tool-head { display: flex; align-items: center; margin-bottom: .45rem; }
+.tool-call { width: 100%; border-left: 2px solid var(--border-strong); background: linear-gradient(90deg, rgb(122 162 247 / 7%), transparent 45%); }
+.tool-head { display: flex; align-items: center; padding: .5rem .75rem .35rem; }
 .tool-head strong { color: var(--muted); font-size: var(--fs-tiny); font-weight: 500; }
-.tool-head strong::before { content: "┌ "; color: var(--faint); }
+.tool-head strong::before { content: "▸ "; color: var(--accent); }
 .tool-head .running { margin-left: auto; }
-.tool-call code { display: block; padding-left: .75rem; border-left: 1px solid var(--border-strong); color: var(--ink); font-size: var(--fs-small); line-height: 1.6; }
-.tool-call code span { color: var(--accent); }
-.tool-call > p { margin: 0; padding: .25rem 0 0 .75rem; border-left: 1px solid var(--border-strong); color: var(--faint); font-size: var(--fs-tiny); line-height: 1.6; }
+.tool-command { display: block; padding: .55rem .75rem; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); background: rgb(26 27 38 / 72%); color: var(--ink); font-size: var(--fs-small); line-height: 1.6; }
+.tool-command span { color: var(--accent); font-weight: 700; }
+.tool-output { margin: 0; padding: .5rem .75rem .55rem; color: var(--muted); font-size: var(--fs-tiny); line-height: 1.6; }
+.tool-output span { color: var(--green); }
 
 .composer-wrap { padding: 0 2rem 1.25rem; background: var(--bg); }
 .composer { border: 1px solid var(--border-strong); background: var(--panel); }

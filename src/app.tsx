@@ -95,8 +95,8 @@ export function App() {
                 <strong>bash</strong>
                 <span class="running"><i /> running</span>
               </div>
-              <code><span>$</span> npm test -- login.test.ts</code>
-              <p>17 passed · retrying focused test…</p>
+              <code class="tool-command"><span>$</span> npm test -- login.test.ts</code>
+              <p class="tool-output"><span>✓</span> 17 passed · retrying focused test…</p>
             </div>
           </article>
         </section>
