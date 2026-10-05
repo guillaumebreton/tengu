@@ -7,6 +7,8 @@ describe("App", () => {
     render(<App />);
 
     expect(screen.getByRole("heading", { name: "Fix the flaky login test" })).toBeInTheDocument();
+    expect(screen.getByText("agents")).toBeInTheDocument();
+    expect(screen.queryByText("conversations")).not.toBeInTheDocument();
     expect(screen.queryByText(/October/)).not.toBeInTheDocument();
     expect(screen.getByRole("combobox", { name: "Model" })).toHaveValue("anthropic/claude-sonnet-4-6");
     expect(screen.getByText("npm test -- login.test.ts").closest("code")).toHaveClass("tool-command");
