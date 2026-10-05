@@ -25,7 +25,7 @@ async function readJson(request: IncomingMessage): Promise<unknown> {
   return JSON.parse(Buffer.concat(chunks).toString("utf8"));
 }
 
-function parseAgentRoute(pathname: string, action: "input" | "events"): ConversationId | undefined {
+function parseAgentRoute(pathname: string, action: "input" | "events" | "model"): ConversationId | undefined {
   const match = pathname.match(new RegExp(`^/api/agents/(\\d+)/${action}$`));
   if (!match) return undefined;
   return Number(match[1]) as ConversationId;
@@ -69,6 +69,23 @@ export function createHttpServer(runtime: Runtime, publicDirectory?: string) {
       if (request.method === "POST" && url.pathname === "/api/agents") {
         const conversation = await runtime.createConversation();
         json(response, 201, { id: conversation.id });
+        return;
+      }
+
+      if (request.method === "GET" && url.pathname === "/api/models") {
+        json(response, 200, await runtime.listModels());
+        return;
+      }
+
+      const modelConversationId = parseAgentRoute(url.pathname, "model");
+      if (request.method === "PUT" && modelConversationId !== undefined) {
+        const body = await readJson(request) as { provider?: unknown; id?: unknown };
+        if (typeof body.provider !== "string" || typeof body.id !== "string") {
+          json(response, 400, { error: "provider and id are required" });
+          return;
+        }
+        await runtime.setModel(modelConversationId, body.provider, body.id);
+        response.writeHead(204).end();
         return;
       }
 
