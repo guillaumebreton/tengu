@@ -39,7 +39,7 @@ describe("HTTP API", () => {
     const created = await createdResponse.json() as { id: number };
 
     const listedResponse = await fetch(`${base}/api/agents`);
-    expect(await listedResponse.json()).toEqual([{ id: created.id }]);
+    expect(await listedResponse.json()).toEqual([{ id: created.id, title: "New agent", preview: "" }]);
 
     const inputResponse = await fetch(`${base}/api/agents/${created.id}/input`, {
       method: "POST",

@@ -38,8 +38,7 @@ export function createHttpServer(runtime: Runtime) {
       const url = new URL(request.url ?? "/", "http://localhost");
 
       if (request.method === "GET" && url.pathname === "/api/agents") {
-        const ids = await runtime.listConversations();
-        json(response, 200, ids.map((id) => ({ id })));
+        json(response, 200, await runtime.listConversations());
         return;
       }
 

@@ -1,19 +1,7 @@
-import { useState } from "preact/hooks";
-import {
-  Composer,
-  SessionHeader,
-  Sidebar,
-  Transcript,
-  type AgentSummary,
-  type Message,
-  type ModelOption,
-} from "./components";
-
-const agents: AgentSummary[] = [
-  { id: "login", title: "Fix the flaky login test", preview: "I found the race in the redirect handler.", time: "now" },
-  { id: "deps", title: "Review dependency updates", preview: "All checks pass. The PR is ready.", time: "18m" },
-  { id: "nix", title: "Simplify the Nix module", preview: "Removed two unnecessary options.", time: "2h" },
-];
+import type { AgentEvent } from "@earendil-works/pi-durable";
+import { useEffect, useState } from "preact/hooks";
+import { connectToAgent, createAgent, listAgents, messagesFromSnapshot, submitInput, type Agent } from "./client";
+import { Composer, SessionHeader, Sidebar, Transcript, type Message, type ModelOption } from "./components";
 
 const models: ModelOption[] = [
   { id: "anthropic/claude-sonnet-4-6", label: "claude-sonnet-4-6" },
@@ -21,48 +9,68 @@ const models: ModelOption[] = [
   { id: "google/gemini-3.1-pro", label: "gemini-3.1-pro" },
 ];
 
-const initialMessages: Message[] = [
-  {
-    role: "user",
-    text: "Take a look at the flaky login test. Create a worktree, find the cause, and open a PR when the fix is clean.",
-  },
-  {
-    role: "assistant",
-    text: "I’ll isolate the work first, then reproduce the failure before changing anything.",
-  },
-];
-
 export function App() {
-  const [messages, setMessages] = useState(initialMessages);
+  const [agents, setAgents] = useState<Agent[]>([]);
+  const [selectedId, setSelectedId] = useState<number>();
+  const [messages, setMessages] = useState<Message[]>([]);
   const [draft, setDraft] = useState("");
   const [model, setModel] = useState(models[0].id);
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  const send = (event: Event) => {
+  useEffect(() => {
+    void listAgents().then((loaded) => {
+      setAgents(loaded);
+      setSelectedId(loaded[0]?.id);
+    });
+  }, []);
+
+  useEffect(() => {
+    if (selectedId === undefined) return;
+    setMessages([]);
+    return connectToAgent(selectedId, (event: AgentEvent) => {
+      if (event.type === "snapshot") setMessages(messagesFromSnapshot(event));
+      if (event.type === "message_end") {
+        const snapshot = { type: "snapshot", entries: [event.entry], tools: [], compactions: [], inbox: [], agent: {}, usage: { models: {}, tools: {} } } as never;
+        setMessages((current) => [...current, ...messagesFromSnapshot(snapshot)]);
+      }
+    });
+  }, [selectedId]);
+
+  const selected = agents.find((agent) => agent.id === selectedId);
+
+  const addAgent = async () => {
+    const agent = await createAgent();
+    setAgents((current) => [agent, ...current]);
+    setSelectedId(agent.id);
+  };
+
+  const send = async (event: Event) => {
     event.preventDefault();
-    const text = draft.trim();
-    if (!text) return;
-    setMessages((current) => [...current, { role: "user", text }]);
+    const content = draft.trim();
+    if (!content || selectedId === undefined) return;
     setDraft("");
+    await submitInput(selectedId, content);
   };
 
   return (
     <div class="shell">
       <Sidebar
-        agents={agents}
-        activeAgentId="login"
+        agents={agents.map((agent) => ({ ...agent, id: String(agent.id), time: "" }))}
+        activeAgentId={String(selectedId ?? "")}
         open={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
+        onCreate={() => void addAgent()}
+        onSelect={(id) => setSelectedId(Number(id))}
       />
       <main class="chat">
         <SessionHeader
-          title="Fix the flaky login test"
+          title={selected?.title ?? "New agent"}
           models={models}
           model={model}
           onModelChange={setModel}
           onOpenAgents={() => setSidebarOpen(true)}
         />
-        <Transcript messages={messages} />
+        <Transcript messages={messages} showExampleTool={false} />
         <Composer value={draft} onInput={setDraft} onSubmit={send} />
       </main>
     </div>
