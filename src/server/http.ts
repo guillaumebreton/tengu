@@ -22,10 +22,14 @@ async function readJson(request: IncomingMessage): Promise<unknown> {
   return JSON.parse(Buffer.concat(chunks).toString("utf8"));
 }
 
-function parseAgentInput(pathname: string): ConversationId | undefined {
-  const match = pathname.match(/^\/api\/agents\/(\d+)\/input$/);
+function parseAgentRoute(pathname: string, action: "input" | "events"): ConversationId | undefined {
+  const match = pathname.match(new RegExp(`^/api/agents/(\\d+)/${action}$`));
   if (!match) return undefined;
   return Number(match[1]) as ConversationId;
+}
+
+function writeEvent(response: ServerResponse, event: unknown) {
+  response.write(`data: ${JSON.stringify(event)}\n\n`);
 }
 
 export function createHttpServer(runtime: Runtime) {
@@ -45,7 +49,29 @@ export function createHttpServer(runtime: Runtime) {
         return;
       }
 
-      const conversationId = parseAgentInput(url.pathname);
+      const eventsConversationId = parseAgentRoute(url.pathname, "events");
+      if (request.method === "GET" && eventsConversationId !== undefined) {
+        await runtime.conversation(eventsConversationId);
+        const stream = await runtime.watch(eventsConversationId);
+        response.writeHead(200, {
+          "content-type": "text/event-stream; charset=utf-8",
+          "cache-control": "no-cache, no-transform",
+          connection: "keep-alive",
+          "x-accel-buffering": "no",
+        });
+        writeEvent(response, stream.snapshot);
+        stream.start(async (events) => {
+          for (const event of events) writeEvent(response, event);
+        });
+        const keepalive = setInterval(() => response.write(": keepalive\n\n"), 15_000);
+        request.once("close", () => {
+          clearInterval(keepalive);
+          void stream.stop();
+        });
+        return;
+      }
+
+      const conversationId = parseAgentRoute(url.pathname, "input");
       if (request.method === "POST" && conversationId !== undefined) {
         const body = await readJson(request) as { content?: unknown; requestId?: unknown };
         if (typeof body.content !== "string" || !body.content.trim() || typeof body.requestId !== "string" || !body.requestId) {

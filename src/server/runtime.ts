@@ -8,6 +8,8 @@ import {
   defineExtension,
   Harness,
   section,
+  watchEvents,
+  type AgentEventStream,
   type Conversation,
   type ConversationId,
   type SettledSubmissionRecord,
@@ -22,6 +24,7 @@ export type Runtime = {
   createConversation(): Promise<Conversation>;
   conversation(id: ConversationId): Promise<Conversation>;
   submit(id: ConversationId, content: string): Promise<SettledSubmissionRecord>;
+  watch(id: ConversationId): Promise<AgentEventStream>;
   close(): Promise<void>;
 };
 
@@ -87,6 +90,7 @@ export async function openRuntime({
     async submit(id, content) {
       return (await (await getConversation(id)).submit({ type: "input", content }, context)).wait(context);
     },
+    watch: (id) => watchEvents(harness, id, context),
     close: () => harness.close(context),
   };
 }
