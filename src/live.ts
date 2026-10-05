@@ -11,6 +11,7 @@ export type LiveTool = {
 };
 
 export type LiveState = {
+  model: string;
   messages: Message[];
   partial: string;
   tools: LiveTool[];
@@ -18,6 +19,7 @@ export type LiveState = {
 };
 
 export const initialLiveState: LiveState = {
+  model: "",
   messages: [],
   partial: "",
   tools: [],
@@ -28,6 +30,7 @@ export function reduceAgentEvent(state: LiveState, event: AgentEvent): LiveState
   switch (event.type) {
     case "snapshot":
       return {
+        model: event.agent.model ? `${event.agent.model.provider}/${event.agent.model.modelId}` : "",
         messages: messagesFromSnapshot(event),
         partial: event.generation?.message ? messageText(event.generation.message.content) : "",
         tools: event.tools.map((tool) => ({
@@ -39,6 +42,8 @@ export function reduceAgentEvent(state: LiveState, event: AgentEvent): LiveState
         })),
         running: event.run !== undefined,
       };
+    case "agent_changed":
+      return { ...state, model: event.agent.model ? `${event.agent.model.provider}/${event.agent.model.modelId}` : "" };
     case "run_start":
       return { ...state, running: true };
     case "run_end":

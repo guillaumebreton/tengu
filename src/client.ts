@@ -1,6 +1,8 @@
 import type { AgentEvent, SnapshotEvent } from "@earendil-works/pi-durable";
 import type { Message } from "./components";
 
+export type Model = { provider: string; id: string; name: string };
+
 export type Agent = {
   id: number;
   title: string;
@@ -11,6 +13,21 @@ export async function listAgents(): Promise<Agent[]> {
   const response = await fetch("/api/agents");
   if (!response.ok) throw new Error("Could not load agents");
   return response.json();
+}
+
+export async function listModels(): Promise<Model[]> {
+  const response = await fetch("/api/models");
+  if (!response.ok) throw new Error("Could not load models");
+  return response.json();
+}
+
+export async function setAgentModel(agentId: number, model: Model): Promise<void> {
+  const response = await fetch(`/api/agents/${agentId}/model`, {
+    method: "PUT",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ provider: model.provider, id: model.id }),
+  });
+  if (!response.ok) throw new Error("Could not change model");
 }
 
 export async function createAgent(): Promise<Agent> {

@@ -1,26 +1,21 @@
 import { useEffect, useReducer, useState } from "preact/hooks";
-import { connectToAgent, createAgent, listAgents, submitInput, type Agent } from "./client";
-import { Composer, SessionHeader, Sidebar, Transcript, type ModelOption } from "./components";
+import { connectToAgent, createAgent, listAgents, listModels, setAgentModel, submitInput, type Agent, type Model } from "./client";
+import { Composer, SessionHeader, Sidebar, Transcript } from "./components";
 import { initialLiveState, reduceAgentEvent } from "./live";
-
-const models: ModelOption[] = [
-  { id: "anthropic/claude-sonnet-4-6", label: "claude-sonnet-4-6" },
-  { id: "openai/gpt-5.4", label: "gpt-5.4" },
-  { id: "google/gemini-3.1-pro", label: "gemini-3.1-pro" },
-];
 
 export function App() {
   const [agents, setAgents] = useState<Agent[]>([]);
   const [selectedId, setSelectedId] = useState<number>();
   const [live, dispatch] = useReducer(reduceAgentEvent, initialLiveState);
   const [draft, setDraft] = useState("");
-  const [model, setModel] = useState(models[0].id);
+  const [models, setModels] = useState<Model[]>([]);
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   useEffect(() => {
-    void listAgents().then((loaded) => {
-      setAgents(loaded);
-      setSelectedId(loaded[0]?.id);
+    void Promise.all([listAgents(), listModels()]).then(([loadedAgents, loadedModels]) => {
+      setAgents(loadedAgents);
+      setModels(loadedModels);
+      setSelectedId(loadedAgents[0]?.id);
     });
   }, []);
 
@@ -58,9 +53,12 @@ export function App() {
       <main class="chat">
         <SessionHeader
           title={selected?.title ?? "New agent"}
-          models={models}
-          model={model}
-          onModelChange={setModel}
+          models={models.map((model) => ({ id: `${model.provider}/${model.id}`, label: model.name }))}
+          model={live.model}
+          onModelChange={(id) => {
+            const next = models.find((model) => `${model.provider}/${model.id}` === id);
+            if (selectedId !== undefined && next) void setAgentModel(selectedId, next);
+          }}
           onOpenAgents={() => setSidebarOpen(true)}
           running={live.running}
         />

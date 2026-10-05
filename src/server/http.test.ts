@@ -50,6 +50,38 @@ describe("HTTP API", () => {
     expect(await inputResponse.json()).toMatchObject({ status: "placed" });
   });
 
+  it("lists models and changes an agent model", async () => {
+    const directory = await mkdtemp(join(tmpdir(), "tengu-models-"));
+    const faux = fauxProvider();
+    const runtime = await openRuntime({
+      database: join(directory, "tengu.sqlite"),
+      workspace: join(directory, "workspace"),
+      provider: faux.provider,
+    });
+    const conversation = await runtime.createConversation();
+    const server = createHttpServer(runtime);
+    await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", resolve));
+    const address = server.address();
+    if (!address || typeof address === "string") throw new Error("Server did not bind");
+    const base = `http://127.0.0.1:${address.port}`;
+    cleanups.push(async () => {
+      await new Promise<void>((resolve, reject) => server.close((error) => error ? reject(error) : resolve()));
+      await runtime.close();
+      await rm(directory, { recursive: true, force: true });
+    });
+
+    expect(await (await fetch(`${base}/api/models`)).json()).toEqual([
+      { provider: "faux", id: "faux-1", name: "Faux Model" },
+    ]);
+    const response = await fetch(`${base}/api/agents/${conversation.id}/model`, {
+      method: "PUT",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ provider: "faux", id: "faux-1" }),
+    });
+    expect(response.status).toBe(204);
+    expect(await runtime.getModel(conversation.id)).toEqual({ provider: "faux", id: "faux-1" });
+  });
+
   it("streams a snapshot and committed agent events", async () => {
     const directory = await mkdtemp(join(tmpdir(), "tengu-events-"));
     const faux = fauxProvider();

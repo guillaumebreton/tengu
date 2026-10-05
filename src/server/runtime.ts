@@ -20,8 +20,12 @@ import { CodingTools } from "@earendil-works/pi-durable/tools";
 const context = BACKGROUND_CONTEXT;
 
 export type AgentSummary = { id: ConversationId; title: string; preview: string };
+export type ModelSummary = { provider: string; id: string; name: string };
 
 export type Runtime = {
+  listModels(): Promise<readonly ModelSummary[]>;
+  getModel(id: ConversationId): Promise<{ provider: string; id: string }>;
+  setModel(id: ConversationId, provider: string, modelId: string): Promise<void>;
   listConversations(): Promise<readonly AgentSummary[]>;
   createConversation(): Promise<Conversation>;
   conversation(id: ConversationId): Promise<Conversation>;
@@ -71,6 +75,22 @@ export async function openRuntime({
   };
 
   return {
+    async listModels() {
+      return (await models.getAvailable()).map((model) => ({
+        provider: model.provider,
+        id: model.id,
+        name: model.name,
+      }));
+    },
+    async getModel(id) {
+      const agent = await (await getConversation(id)).agent(context);
+      if (!agent.model) throw new Error(`Conversation has no model: ${id}`);
+      return { provider: agent.model.provider, id: agent.model.modelId };
+    },
+    async setModel(id, providerId, modelId) {
+      if (!models.getModel(providerId, modelId)) throw new Error(`Unknown model: ${providerId}/${modelId}`);
+      await (await getConversation(id)).configure({ model: { provider: providerId, modelId } }, context);
+    },
     async listConversations() {
       const records = (await storage.scanConversations({}, 100, undefined, context)).items
         .filter((conversation) => conversation.owner === undefined);
