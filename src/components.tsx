@@ -1,4 +1,5 @@
 import type { ComponentChildren } from "preact";
+import type { LiveTool } from "./live";
 
 export type AgentSummary = {
   id: string;
@@ -17,8 +18,8 @@ export type Message = {
   text: string;
 };
 
-export function Status({ state, children }: { state: "connected" | "working"; children: ComponentChildren }) {
-  return <span class={state === "working" ? "run-state" : "connection-state"}><i />{children}</span>;
+export function Status({ state, children }: { state: "connected" | "working" | "idle"; children: ComponentChildren }) {
+  return <span class={state === "connected" ? "connection-state" : "run-state"} data-state={state}><i />{children}</span>;
 }
 
 export function Sidebar({
@@ -71,12 +72,14 @@ export function SessionHeader({
   model,
   onModelChange,
   onOpenAgents,
+  running,
 }: {
   title: string;
   models: ModelOption[];
   model: string;
   onModelChange: (model: string) => void;
   onOpenAgents: () => void;
+  running: boolean;
 }) {
   return (
     <header class="chat-header">
@@ -88,16 +91,32 @@ export function SessionHeader({
           {models.map((candidate) => <option value={candidate.id} key={candidate.id}>{candidate.label}</option>)}
         </select>
       </label>
-      <Status state="working">working</Status>
+      <Status state={running ? "working" : "idle"}>{running ? "working" : "idle"}</Status>
     </header>
   );
 }
 
-export function Transcript({ messages, showExampleTool = true }: { messages: Message[]; showExampleTool?: boolean }) {
+export function Transcript({
+  messages,
+  partial = "",
+  tools = [],
+  showExampleTool = true,
+}: {
+  messages: Message[];
+  partial?: string;
+  tools?: LiveTool[];
+  showExampleTool?: boolean;
+}) {
   return (
     <section class="transcript" aria-live="polite">
       {messages.map((message, index) => (
         <MessageRow message={message} key={`${message.role}-${index}`} />
+      ))}
+      {partial && <MessageRow message={{ role: "assistant", text: partial }} />}
+      {tools.map((tool) => (
+        <MessageFrame speaker="tengu" role="assistant" key={tool.id}>
+          <ToolCall name={tool.name} command={tool.command} output={tool.output} state={tool.state} />
+        </MessageFrame>
       ))}
       {showExampleTool && (
         <MessageFrame speaker="tengu" role="assistant">
@@ -155,8 +174,8 @@ export function ToolCall({
         <strong>{name}</strong>
         <span class={state}><i /> {state}</span>
       </div>
-      <code class="tool-command"><span>$</span> {command}</code>
-      <p class="tool-output"><span>{state === "done" ? "✓" : "·"}</span> {output}</p>
+      {command && <code class="tool-command"><span>$</span> {command}</code>}
+      {output && <pre class="tool-output"><span>{state === "done" ? "✓" : "·"}</span> {output}</pre>}
     </div>
   );
 }
