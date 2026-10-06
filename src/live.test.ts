@@ -9,6 +9,10 @@ describe("reduceAgentEvent", () => {
     } as never);
     state = reduceAgentEvent(state, { type: "run_start", inputs: [1] } as never);
     state = reduceAgentEvent(state, {
+      type: "inbox_update",
+      items: [{ id: 4, mode: "followUp" }, { id: 5, mode: "steer" }],
+    } as never);
+    state = reduceAgentEvent(state, {
       type: "message_start",
       message: { role: "assistant", content: [] },
     } as never);
@@ -31,6 +35,7 @@ describe("reduceAgentEvent", () => {
     } as never);
 
     expect(state.running).toBe(true);
+    expect(state.queued).toBe(2);
     expect(state.partial).toBe("Working");
     expect(state.tools).toEqual([{ id: "call-1", name: "bash", command: "npm test", output: "2 passed", state: "running" }]);
 

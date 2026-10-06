@@ -16,6 +16,7 @@ export type LiveState = {
   partial: string;
   tools: LiveTool[];
   running: boolean;
+  queued: number;
 };
 
 export const initialLiveState: LiveState = {
@@ -24,6 +25,7 @@ export const initialLiveState: LiveState = {
   partial: "",
   tools: [],
   running: false,
+  queued: 0,
 };
 
 export function reduceAgentEvent(state: LiveState, event: AgentEvent): LiveState {
@@ -41,9 +43,12 @@ export function reduceAgentEvent(state: LiveState, event: AgentEvent): LiveState
           state: tool.status === "done" ? "done" : "running",
         })),
         running: event.run !== undefined,
+        queued: event.inbox.length,
       };
     case "agent_changed":
       return { ...state, model: event.agent.model ? `${event.agent.model.provider}/${event.agent.model.modelId}` : "" };
+    case "inbox_update":
+      return { ...state, queued: event.items.length };
     case "run_start":
       return { ...state, running: true };
     case "run_end":
