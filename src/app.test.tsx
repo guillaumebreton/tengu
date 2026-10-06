@@ -44,6 +44,38 @@ describe("App", () => {
     expect(screen.getByRole("button", { name: "Create agent" })).toBeInTheDocument();
   });
 
+  it("supports global keyboard actions", async () => {
+    vi.stubGlobal("EventSource", TestEventSource);
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(new Response(JSON.stringify([
+        { id: 2, title: "Second agent", preview: "" },
+        { id: 1, title: "First agent", preview: "" },
+      ])))
+      .mockResolvedValueOnce(new Response(JSON.stringify([{ provider: "openai", id: "gpt-5.4", name: "gpt-5.4" }])))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ id: 3 }), { status: 201 }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(<App />);
+    expect(await screen.findByRole("heading", { name: "Second agent" })).toBeInTheDocument();
+
+    fireEvent.keyDown(window, { key: "c" });
+    expect(screen.getByRole("textbox", { name: "Message Tengu" })).toHaveFocus();
+
+    fireEvent.keyDown(window, { key: "k", metaKey: true });
+    expect(screen.getByRole("complementary")).toHaveAttribute("data-open", "true");
+
+    fireEvent.keyDown(window, { key: "j" });
+    fireEvent.keyDown(window, { key: "Enter" });
+    expect(await screen.findByRole("heading", { name: "First agent" })).toBeInTheDocument();
+
+    fireEvent.keyDown(window, { key: "Escape" });
+    expect(screen.getByRole("complementary")).toHaveAttribute("data-open", "false");
+
+    fireEvent.keyDown(window, { key: "n" });
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledWith("/api/agents", { method: "POST" }));
+    expect(await screen.findByRole("heading", { name: "New agent" })).toBeInTheDocument();
+  });
+
   it("shows a selected agent and submits a prompt", async () => {
     vi.stubGlobal("EventSource", TestEventSource);
     vi.stubGlobal("crypto", { randomUUID: () => "request-1" });
