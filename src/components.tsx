@@ -74,6 +74,7 @@ export function SessionHeader({
   onModelChange,
   onOpenAgents,
   running,
+  onStop,
 }: {
   title: string;
   models: ModelOption[];
@@ -81,6 +82,7 @@ export function SessionHeader({
   onModelChange: (model: string) => void;
   onOpenAgents: () => void;
   running: boolean;
+  onStop: () => void;
 }) {
   return (
     <header class="chat-header">
@@ -93,6 +95,7 @@ export function SessionHeader({
         </select>
       </label>
       <Status state={running ? "working" : "idle"}>{running ? "working" : "idle"}</Status>
+      {running && <button class="stop-button" onClick={onStop}>stop</button>}
     </header>
   );
 }

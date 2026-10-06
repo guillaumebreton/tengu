@@ -31,7 +31,8 @@ describe("App", () => {
       .mockResolvedValueOnce(new Response(JSON.stringify([{ id: 1, title: "Fix the flaky login test", preview: "" }])))
       .mockResolvedValueOnce(new Response(JSON.stringify([{ provider: "openai", id: "gpt-5.4", name: "gpt-5.4" }])))
       .mockResolvedValueOnce(new Response(null, { status: 204 }))
-      .mockResolvedValueOnce(new Response(JSON.stringify({ status: "placed" }), { status: 202 }));
+      .mockResolvedValueOnce(new Response(JSON.stringify({ status: "placed" }), { status: 202 }))
+      .mockResolvedValueOnce(new Response(null, { status: 204 }));
     vi.stubGlobal("fetch", fetchMock);
 
     render(<App />);
@@ -50,5 +51,8 @@ describe("App", () => {
 
     await waitFor(() => expect(fetchMock).toHaveBeenLastCalledWith("/api/agents/1/steer", expect.objectContaining({ method: "POST" })));
     expect(composer).toHaveValue("");
+
+    fireEvent.click(screen.getByRole("button", { name: "stop" }));
+    await waitFor(() => expect(fetchMock).toHaveBeenLastCalledWith("/api/agents/1/stop", { method: "POST" }));
   });
 });

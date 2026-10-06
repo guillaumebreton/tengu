@@ -82,6 +82,31 @@ describe("HTTP API", () => {
     expect(await response.json()).toMatchObject({ requestId: "steer-1" });
   });
 
+  it("stops an agent run", async () => {
+    const directory = await mkdtemp(join(tmpdir(), "tengu-stop-"));
+    const faux = fauxProvider();
+    const runtime = await openRuntime({
+      database: join(directory, "tengu.sqlite"),
+      workspace: join(directory, "workspace"),
+      ...fauxModels(faux),
+    });
+    const conversation = await runtime.createConversation();
+    const server = createHttpServer(runtime);
+    await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", resolve));
+    const address = server.address();
+    if (!address || typeof address === "string") throw new Error("Server did not bind");
+    const base = `http://127.0.0.1:${address.port}`;
+    cleanups.push(async () => {
+      await new Promise<void>((resolve, reject) => server.close((error) => error ? reject(error) : resolve()));
+      await runtime.close();
+      await rm(directory, { recursive: true, force: true });
+    });
+
+    const response = await fetch(`${base}/api/agents/${conversation.id}/stop`, { method: "POST" });
+
+    expect(response.status).toBe(204);
+  });
+
   it("lists models and changes an agent model", async () => {
     const directory = await mkdtemp(join(tmpdir(), "tengu-models-"));
     const faux = fauxProvider();
