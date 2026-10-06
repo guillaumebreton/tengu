@@ -1,7 +1,7 @@
 import { mkdir } from "node:fs/promises";
 import { dirname } from "node:path";
 import { BACKGROUND_CONTEXT } from "@earendil-works/chord/context";
-import { createModels, type Provider } from "@earendil-works/pi-ai/models";
+import type { Models } from "@earendil-works/pi-ai/models";
 import { NodeExecutionEnv } from "@earendil-works/pi-durable/env/node";
 import {
   createRegistry,
@@ -37,16 +37,17 @@ export type Runtime = {
 export async function openRuntime({
   database,
   workspace,
-  provider,
+  models,
+  defaultModel,
+  modelProviders,
 }: {
   database: string;
   workspace: string;
-  provider: Provider;
+  models: Models;
+  defaultModel: { provider: string; modelId: string };
+  modelProviders?: readonly string[];
 }): Promise<Runtime> {
   await Promise.all([mkdir(dirname(database), { recursive: true }), mkdir(workspace, { recursive: true })]);
-
-  const models = createModels();
-  models.setProvider(provider);
 
   const registry = createRegistry();
   const Tengu = defineExtension({
@@ -76,11 +77,13 @@ export async function openRuntime({
 
   return {
     async listModels() {
-      return (await models.getAvailable()).map((model) => ({
+      return (await models.getAvailable())
+        .filter((model) => modelProviders === undefined || modelProviders.includes(model.provider))
+        .map((model) => ({
         provider: model.provider,
         id: model.id,
-        name: model.name,
-      }));
+          name: model.name,
+        }));
     },
     async getModel(id) {
       const agent = await (await getConversation(id)).agent(context);
@@ -115,7 +118,7 @@ export async function openRuntime({
         {
           ownership: { kind: "ownerless" },
           agent: {
-            model: { provider: provider.id, modelId: provider.getModels()[0].id },
+            model: defaultModel,
             cwd: workspace,
             extensions: [CodingTools, Tengu],
           },
