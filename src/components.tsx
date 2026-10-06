@@ -185,10 +185,12 @@ export function Composer({
   value,
   onInput,
   onSubmit,
+  steer = false,
 }: {
   value: string;
   onInput: (value: string) => void;
   onSubmit: (event: Event) => void;
+  steer?: boolean;
 }) {
   return (
     <div class="composer-wrap">
@@ -208,7 +210,9 @@ export function Composer({
         />
         <div class="composer-actions">
           <span>enter to send · shift+enter for newline</span>
-          <button type="submit" aria-label="Send message" disabled={!value.trim()}>send ↵</button>
+          <button type="submit" aria-label={steer ? "Steer agent" : "Send message"} disabled={!value.trim()}>
+            {steer ? "steer ↵" : "send ↵"}
+          </button>
         </div>
       </form>
     </div>

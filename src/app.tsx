@@ -37,7 +37,7 @@ export function App() {
     const content = draft.trim();
     if (!content || selectedId === undefined) return;
     setDraft("");
-    await submitInput(selectedId, content);
+    await submitInput(selectedId, content, live.running);
   };
 
   return (
@@ -63,7 +63,7 @@ export function App() {
           running={live.running}
         />
         <Transcript messages={live.messages} partial={live.partial} tools={live.tools} showExampleTool={false} />
-        <Composer value={draft} onInput={setDraft} onSubmit={send} />
+        <Composer value={draft} onInput={setDraft} onSubmit={send} steer={live.running} />
       </main>
     </div>
   );
