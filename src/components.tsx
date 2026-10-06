@@ -1,4 +1,4 @@
-import type { ComponentChildren } from "preact";
+import type { ComponentChildren, Ref } from "preact";
 import type { LiveTool } from "./live";
 
 export type AgentSummary = {
@@ -204,18 +204,21 @@ export function Composer({
   onSubmit,
   steer = false,
   error,
+  inputRef,
 }: {
   value: string;
   onInput: (value: string) => void;
   onSubmit: (event: Event) => void;
   steer?: boolean;
   error?: string;
+  inputRef?: Ref<HTMLTextAreaElement>;
 }) {
   return (
     <div class="composer-wrap">
       {error && <p class="request-error" role="alert">{error}</p>}
       <form class="composer" onSubmit={onSubmit}>
         <textarea
+          ref={inputRef}
           rows={2}
           aria-label="Message Tengu"
           placeholder="Type a message..."
