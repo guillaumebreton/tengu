@@ -96,7 +96,8 @@ export async function openRuntime({
     },
     async listConversations() {
       const records = (await storage.scanConversations({}, 100, undefined, context)).items
-        .filter((conversation) => conversation.owner === undefined);
+        .filter((conversation) => conversation.owner === undefined)
+        .sort((a, b) => b.id - a.id);
       return Promise.all(records.map(async ({ id }) => {
         const conversation = await getConversation(id);
         const entries = (await conversation.entries({}, 20, undefined, context)).items;

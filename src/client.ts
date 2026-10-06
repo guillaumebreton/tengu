@@ -62,7 +62,7 @@ function text(content: unknown): string {
 }
 
 export function messagesFromSnapshot(snapshot: SnapshotEvent): Message[] {
-  return [...snapshot.entries].reverse().flatMap((entry) =>
+  return [...snapshot.entries].sort((a, b) => a.id - b.id).flatMap((entry) =>
     (entry.model ?? []).flatMap((message) => {
       if (message.role !== "user" && message.role !== "assistant") return [];
       const content = text(message.content);

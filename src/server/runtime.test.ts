@@ -29,6 +29,7 @@ describe("runtime", () => {
 
     const first = await openRuntime({ database, workspace, ...fauxModels(firstProvider) });
     const conversation = await first.createConversation();
+    await first.createConversation();
     const settled = await first.submit(conversation.id, "Create proof.txt");
 
     expect(settled.status).toBe("done");
@@ -38,7 +39,9 @@ describe("runtime", () => {
     const secondProvider = fauxProvider();
     const second = await openRuntime({ database, workspace, ...fauxModels(secondProvider) });
     const reopened = await second.conversation(conversation.id);
+    const conversations = await second.listConversations();
 
+    expect(conversations.map(({ id }) => id)).toEqual([...conversations.map(({ id }) => id)].sort((a, b) => b - a));
     expect(reopened.id).toBe(conversation.id);
     expect((await reopened.entries({}, 20, undefined, BACKGROUND_CONTEXT)).items.length).toBeGreaterThan(0);
     await second.close();
