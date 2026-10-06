@@ -2,27 +2,43 @@ import { describe, expect, it } from "vitest";
 import { initialLiveState, reduceAgentEvent } from "./live";
 
 describe("reduceAgentEvent", () => {
-  it("restores completed tool calls from durable entries", () => {
+  it("restores messages and tool calls in durable entry order", () => {
     const state = reduceAgentEvent(initialLiveState, {
       type: "snapshot",
       entries: [
         {
           id: 1,
           conversationId: 1,
-          kind: "pi.assistant",
-          model: [{ role: "assistant", content: [{ type: "toolCall", id: "call-1", name: "bash", arguments: { command: "ls" } }] }],
+          kind: "pi.user",
+          model: [{ role: "user", content: "Run ls" }],
         },
         {
           id: 2,
           conversationId: 1,
+          kind: "pi.assistant",
+          model: [{ role: "assistant", content: [{ type: "toolCall", id: "call-1", name: "bash", arguments: { command: "ls" } }] }],
+        },
+        {
+          id: 3,
+          conversationId: 1,
           kind: "pi.tool-result",
           model: [{ role: "toolResult", toolCallId: "call-1", toolName: "bash", content: [{ type: "text", text: "src\npackage.json\n" }] }],
+        },
+        {
+          id: 4,
+          conversationId: 1,
+          kind: "pi.assistant",
+          model: [{ role: "assistant", content: [{ type: "text", text: "Done" }] }],
         },
       ],
       tools: [], compactions: [], inbox: [], agent: {}, usage: { models: {}, tools: {} },
     } as never);
 
-    expect(state.tools).toEqual([{ id: "call-1", name: "bash", command: "ls", output: "src\npackage.json\n", state: "done" }]);
+    expect(state.items).toEqual([
+      { type: "message", message: { role: "user", text: "Run ls" } },
+      { type: "tool", tool: { id: "call-1", name: "bash", command: "ls", output: "src\npackage.json\n", state: "done" } },
+      { type: "message", message: { role: "assistant", text: "Done" } },
+    ]);
   });
 
   it("takes final output from a fast tool completion", () => {
@@ -42,7 +58,7 @@ describe("reduceAgentEvent", () => {
       },
     } as never);
 
-    expect(state.tools[0]).toEqual({ id: "call-1", name: "bash", command: "ls", output: "src\n", state: "done" });
+    expect(state.items[0]).toEqual({ type: "tool", tool: { id: "call-1", name: "bash", command: "ls", output: "src\n", state: "done" } });
   });
 
   it("streams assistant text and tool output through a run", () => {
@@ -80,12 +96,12 @@ describe("reduceAgentEvent", () => {
     expect(state.running).toBe(true);
     expect(state.queued).toBe(2);
     expect(state.partial).toBe("Working");
-    expect(state.tools).toEqual([{ id: "call-1", name: "bash", command: "npm test", output: "2 passed", state: "running" }]);
+    expect(state.items).toContainEqual({ type: "tool", tool: { id: "call-1", name: "bash", command: "npm test", output: "2 passed", state: "running" } });
 
     state = reduceAgentEvent(state, { type: "tool_execution_end", toolCallId: "call-1", toolName: "bash" } as never);
     state = reduceAgentEvent(state, { type: "run_end", inputs: [1] } as never);
 
     expect(state.running).toBe(false);
-    expect(state.tools[0].state).toBe("done");
+    expect(state.items.find((item) => item.type === "tool")?.tool.state).toBe("done");
   });
 });

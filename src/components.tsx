@@ -1,5 +1,5 @@
 import type { ComponentChildren, Ref } from "preact";
-import type { LiveTool } from "./live";
+import type { LiveTool, TranscriptItem } from "./live";
 
 export type AgentSummary = {
   id: string;
@@ -115,27 +115,22 @@ export function EmptyState({ onCreate }: { onCreate: () => void }) {
 }
 
 export function Transcript({
-  messages,
+  items,
   partial = "",
-  tools = [],
   showExampleTool = true,
 }: {
-  messages: Message[];
+  items: TranscriptItem[];
   partial?: string;
-  tools?: LiveTool[];
   showExampleTool?: boolean;
 }) {
   return (
     <section class="transcript" aria-live="polite">
-      {messages.map((message, index) => (
-        <MessageRow message={message} key={`${message.role}-${index}`} />
-      ))}
+      {items.map((item, index) => item.type === "message"
+        ? <MessageRow message={item.message} key={`message-${index}`} />
+        : <MessageFrame role="assistant" key={item.tool.id}>
+            <ToolCall name={item.tool.name} command={item.tool.command} output={item.tool.output} state={item.tool.state} />
+          </MessageFrame>)}
       {partial && <MessageRow message={{ role: "assistant", text: partial }} />}
-      {tools.map((tool) => (
-        <MessageFrame role="assistant" key={tool.id}>
-          <ToolCall name={tool.name} command={tool.command} output={tool.output} state={tool.state} />
-        </MessageFrame>
-      ))}
       {showExampleTool && (
         <MessageFrame role="assistant">
           <ToolCall

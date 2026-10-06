@@ -115,7 +115,7 @@ export function App() {
           queued={live.queued}
           onStop={() => { if (selectedId !== undefined) void stopAgent(selectedId); }}
         />
-        <Transcript messages={live.messages} partial={live.partial} tools={live.tools} showExampleTool={false} />
+        <Transcript items={live.items} partial={live.partial} showExampleTool={false} />
         <Composer value={draft} onInput={setDraft} onSubmit={send} steer={live.running} error={error} inputRef={composerRef} />
         </>}
       </main>
