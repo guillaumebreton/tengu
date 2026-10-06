@@ -19,8 +19,8 @@ export type Message = {
   error?: boolean;
 };
 
-export function Status({ state, children }: { state: "connected" | "working" | "idle"; children: ComponentChildren }) {
-  return <span class={state === "connected" ? "connection-state" : "run-state"} data-state={state}><i />{children}</span>;
+export function Status({ state, children }: { state: "connected" | "disconnected" | "working" | "idle"; children: ComponentChildren }) {
+  return <span class={state === "connected" || state === "disconnected" ? "connection-state" : "run-state"} data-state={state}><i />{children}</span>;
 }
 
 export function Sidebar({
@@ -30,6 +30,7 @@ export function Sidebar({
   onClose,
   onCreate,
   onSelect,
+  connection,
 }: {
   agents: AgentSummary[];
   activeAgentId: string;
@@ -37,6 +38,7 @@ export function Sidebar({
   onClose: () => void;
   onCreate: () => void;
   onSelect: (id: string) => void;
+  connection: "connected" | "disconnected";
 }) {
   return (
     <>
@@ -61,7 +63,7 @@ export function Sidebar({
             ))}
           </div>
         </nav>
-        <footer class="sidebar-footer"><Status state="connected">connected</Status></footer>
+        <footer class="sidebar-footer"><Status state={connection}>{connection}</Status></footer>
       </aside>
     </>
   );
@@ -189,14 +191,17 @@ export function Composer({
   onInput,
   onSubmit,
   steer = false,
+  error,
 }: {
   value: string;
   onInput: (value: string) => void;
   onSubmit: (event: Event) => void;
   steer?: boolean;
+  error?: string;
 }) {
   return (
     <div class="composer-wrap">
+      {error && <p class="request-error" role="alert">{error}</p>}
       <form class="composer" onSubmit={onSubmit}>
         <textarea
           rows={2}
