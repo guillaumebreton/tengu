@@ -64,7 +64,7 @@ button { cursor: pointer; }
 .run-state[data-state="idle"] { color: var(--faint); }
 .run-state[data-state="idle"] i { background: var(--faint); }
 
-.chat { min-width: 0; display: grid; grid-template-rows: auto minmax(0, 1fr) auto; background: var(--bg); }
+.chat { height: 100%; min-width: 0; min-height: 0; display: grid; grid-template-rows: auto minmax(0, 1fr) auto; overflow: hidden; background: var(--bg); }
 .empty-state { display: grid; grid-row: 1 / -1; place-content: center; justify-items: start; gap: .75rem; color: var(--muted); }
 .empty-state p { margin: 0; }
 .empty-state button { padding: .35rem .55rem; border: 1px solid var(--border-strong); background: transparent; color: var(--accent); font-size: var(--fs-tiny); }
