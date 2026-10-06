@@ -76,6 +76,7 @@ export function App() {
           }}
           onOpenAgents={() => setSidebarOpen(true)}
           running={live.running}
+          queued={live.queued}
           onStop={() => { if (selectedId !== undefined) void stopAgent(selectedId); }}
         />
         <Transcript messages={live.messages} partial={live.partial} tools={live.tools} showExampleTool={false} />

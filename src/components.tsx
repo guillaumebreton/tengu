@@ -76,6 +76,7 @@ export function SessionHeader({
   onModelChange,
   onOpenAgents,
   running,
+  queued,
   onStop,
 }: {
   title: string;
@@ -84,6 +85,7 @@ export function SessionHeader({
   onModelChange: (model: string) => void;
   onOpenAgents: () => void;
   running: boolean;
+  queued: number;
   onStop: () => void;
 }) {
   return (
@@ -97,6 +99,7 @@ export function SessionHeader({
         </select>
       </label>
       <Status state={running ? "working" : "idle"}>{running ? "working" : "idle"}</Status>
+      {queued > 0 && <span class="queue-count">{queued} queued</span>}
       {running && <button class="stop-button" onClick={onStop}>stop</button>}
     </header>
   );
