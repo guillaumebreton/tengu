@@ -64,6 +64,10 @@ button { cursor: pointer; }
 .run-state[data-state="idle"] i { background: var(--faint); }
 
 .chat { min-width: 0; display: grid; grid-template-rows: auto minmax(0, 1fr) auto; background: var(--bg); }
+.empty-state { display: grid; grid-row: 1 / -1; place-content: center; justify-items: start; gap: .75rem; color: var(--muted); }
+.empty-state p { margin: 0; }
+.empty-state button { padding: .35rem .55rem; border: 1px solid var(--border-strong); background: transparent; color: var(--accent); font-size: var(--fs-tiny); }
+.empty-state button:hover { background: var(--raised); color: var(--ink); }
 .chat-header { gap: .875rem; padding: 0 1.25rem; }
 .chat-header h1 { min-width: 0; margin: 0; overflow: hidden; color: var(--ink); text-overflow: ellipsis; white-space: nowrap; font-size: var(--fs-title); font-weight: 500; }
 .menu-button { display: none; padding: .35rem; }

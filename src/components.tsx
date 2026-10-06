@@ -105,6 +105,15 @@ export function SessionHeader({
   );
 }
 
+export function EmptyState({ onCreate }: { onCreate: () => void }) {
+  return (
+    <section class="empty-state">
+      <p>No agents yet.</p>
+      <button onClick={onCreate}>Create agent</button>
+    </section>
+  );
+}
+
 export function Transcript({
   messages,
   partial = "",

@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/preact";
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/preact";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { App } from "./app";
 
@@ -26,9 +26,24 @@ class TestEventSource {
   close = close;
 }
 
-afterEach(() => vi.restoreAllMocks());
+afterEach(() => {
+  cleanup();
+  vi.restoreAllMocks();
+});
 
 describe("App", () => {
+  it("offers to create the first agent", async () => {
+    vi.stubGlobal("EventSource", TestEventSource);
+    vi.stubGlobal("fetch", vi.fn()
+      .mockResolvedValueOnce(new Response(JSON.stringify([])))
+      .mockResolvedValueOnce(new Response(JSON.stringify([{ provider: "openai-codex", id: "gpt-5.6-terra", name: "GPT-5.6 Terra" }]))));
+
+    render(<App />);
+
+    expect(await screen.findByText("No agents yet.")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Create agent" })).toBeInTheDocument();
+  });
+
   it("shows a selected agent and submits a prompt", async () => {
     vi.stubGlobal("EventSource", TestEventSource);
     vi.stubGlobal("crypto", { randomUUID: () => "request-1" });
