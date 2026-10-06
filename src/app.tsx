@@ -1,6 +1,6 @@
 import { useEffect, useReducer, useState } from "preact/hooks";
 import { connectToAgent, createAgent, listAgents, listModels, setAgentModel, stopAgent, submitInput, type Agent, type Model } from "./client";
-import { Composer, SessionHeader, Sidebar, Transcript } from "./components";
+import { Composer, EmptyState, SessionHeader, Sidebar, Transcript } from "./components";
 import { initialLiveState, reduceAgentEvent } from "./live";
 
 export function App() {
@@ -66,6 +66,9 @@ export function App() {
         connection={connection}
       />
       <main class="chat">
+        {selectedId === undefined ? (
+          <EmptyState onCreate={() => void addAgent()} />
+        ) : <>
         <SessionHeader
           title={selected?.title ?? "New agent"}
           models={models.map((model) => ({ id: `${model.provider}/${model.id}`, label: model.name }))}
@@ -81,6 +84,7 @@ export function App() {
         />
         <Transcript messages={live.messages} partial={live.partial} tools={live.tools} showExampleTool={false} />
         <Composer value={draft} onInput={setDraft} onSubmit={send} steer={live.running} error={error} />
+        </>}
       </main>
     </div>
   );
