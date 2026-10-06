@@ -96,6 +96,8 @@ describe("App", () => {
     expect(screen.queryByText("tengu", { selector: ".speaker" })).not.toBeInTheDocument();
     expect(screen.getByText("agents")).toBeInTheDocument();
     expect(screen.getByRole("combobox", { name: "Model" })).toHaveValue("openai/gpt-5.4");
+    expect(screen.queryByText("working")).not.toBeInTheDocument();
+    expect(screen.getByLabelText("Agent is working")).toBeInTheDocument();
 
     fireEvent.change(screen.getByRole("combobox", { name: "Model" }), { target: { value: "openai/gpt-5.4" } });
     await waitFor(() => expect(fetchMock).toHaveBeenCalledWith("/api/agents/1/model", expect.objectContaining({ method: "PUT" })));

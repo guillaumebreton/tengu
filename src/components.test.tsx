@@ -5,6 +5,12 @@ import { ToolCall, Transcript } from "./components";
 afterEach(cleanup);
 
 describe("Transcript", () => {
+  it("shows activity at the transcript insertion point while running", () => {
+    render(<Transcript items={[]} running showExampleTool={false} />);
+
+    expect(screen.getByLabelText("Agent is working")).toBeInTheDocument();
+  });
+
   it("renders tool calls between surrounding messages", () => {
     const { container } = render(<Transcript
       items={[

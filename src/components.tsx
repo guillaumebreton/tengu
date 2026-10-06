@@ -98,7 +98,6 @@ export function SessionHeader({
           {models.map((candidate) => <option value={candidate.id} key={candidate.id}>{candidate.label}</option>)}
         </select>
       </label>
-      <Status state={running ? "working" : "idle"}>{running ? "working" : "idle"}</Status>
       {queued > 0 && <span class="queue-count">{queued} queued</span>}
       {running && <button class="stop-button" onClick={onStop}>stop</button>}
     </header>
@@ -117,10 +116,12 @@ export function EmptyState({ onCreate }: { onCreate: () => void }) {
 export function Transcript({
   items,
   partial = "",
+  running = false,
   showExampleTool = true,
 }: {
   items: TranscriptItem[];
   partial?: string;
+  running?: boolean;
   showExampleTool?: boolean;
 }) {
   return (
@@ -131,6 +132,7 @@ export function Transcript({
             <ToolCall name={item.tool.name} command={item.tool.command} output={item.tool.output} state={item.tool.state} />
           </MessageFrame>)}
       {partial && <MessageRow message={{ role: "assistant", text: partial }} />}
+      {running && <span class="agent-working" role="status" aria-label="Agent is working"><i /><i /><i /></span>}
       {showExampleTool && (
         <MessageFrame role="assistant">
           <ToolCall
