@@ -132,12 +132,12 @@ export function Transcript({
       ))}
       {partial && <MessageRow message={{ role: "assistant", text: partial }} />}
       {tools.map((tool) => (
-        <MessageFrame speaker="tengu" role="assistant" key={tool.id}>
+        <MessageFrame role="assistant" key={tool.id}>
           <ToolCall name={tool.name} command={tool.command} output={tool.output} state={tool.state} />
         </MessageFrame>
       ))}
       {showExampleTool && (
-        <MessageFrame speaker="tengu" role="assistant">
+        <MessageFrame role="assistant">
           <ToolCall
             name="bash"
             command="npm test -- login.test.ts"
@@ -152,27 +152,20 @@ export function Transcript({
 
 export function MessageRow({ message }: { message: Message }) {
   return (
-    <MessageFrame speaker={message.role === "assistant" ? "tengu" : "you"} role={message.role}>
+    <MessageFrame role={message.role}>
       <p class={message.error ? "message-error" : undefined}>{message.text}</p>
     </MessageFrame>
   );
 }
 
 function MessageFrame({
-  speaker,
   role,
   children,
 }: {
-  speaker: string;
   role: Message["role"];
   children: ComponentChildren;
 }) {
-  return (
-    <article class={`message ${role}`}>
-      <p class="speaker">{speaker}</p>
-      {children}
-    </article>
-  );
+  return <article class={`message ${role}`}>{children}</article>;
 }
 
 export function ToolCall({

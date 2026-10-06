@@ -90,7 +90,10 @@ describe("App", () => {
     render(<App />);
 
     expect(await screen.findByRole("heading", { name: "Fix the flaky login test" })).toBeInTheDocument();
-    expect(await screen.findByText("Fix the flaky login test", { selector: ".message > p:last-child" })).toBeInTheDocument();
+    const userMessage = await screen.findByText("Fix the flaky login test", { selector: ".message > p:last-child" });
+    expect(userMessage.closest(".message")).toHaveClass("user");
+    expect(screen.queryByText("you", { selector: ".speaker" })).not.toBeInTheDocument();
+    expect(screen.queryByText("tengu", { selector: ".speaker" })).not.toBeInTheDocument();
     expect(screen.getByText("agents")).toBeInTheDocument();
     expect(screen.getByRole("combobox", { name: "Model" })).toHaveValue("openai/gpt-5.4");
 
