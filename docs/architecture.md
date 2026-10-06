@@ -17,6 +17,7 @@ It is a thin web adapter around Pi Durable.
 - Prefer platform APIs and explicit code over frameworks.
 - Add a dependency or configuration option only for a demonstrated need.
 - Keep the browser disposable; committed server state is authoritative.
+- Make every primary action operable with a keyboard.
 - Measure before adding caches, concurrency controls, or rendering machinery.
 
 ## Version 1
@@ -173,7 +174,10 @@ It does not maintain a parallel domain model. Components subscribe only to the
 state they render so streaming output does not rerender the entire page.
 
 Use semantic controls, visible focus, keyboard navigation, reduced-motion
-preferences, system fonts, and accessible status announcements. Do not add
+preferences, system fonts, and accessible status announcements. Global keyboard
+shortcuts map keys directly to application functions in one place. They are
+accelerators, not replacements for native controls or normal focus order, and
+unmodified shortcuts do not fire while the user is typing. Do not add
 virtualization until a measured transcript proves it necessary.
 
 ## Files and configuration
