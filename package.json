@@ -1,0 +1,31 @@
+{
+  "name": "tengu",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 0.0.0.0",
+    "dev:server": "node --experimental-strip-types src/server/main.ts",
+    "build": "tsc -b && vite build",
+    "start": "node build/main.js",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "@earendil-works/chord": "1.0.3",
+    "@earendil-works/pi-ai": "1.0.3",
+    "@earendil-works/pi-coding-agent": "1.0.3",
+    "@earendil-works/pi-durable": "1.0.3",
+    "preact": "^10.28.2"
+  },
+  "devDependencies": {
+    "@preact/preset-vite": "^2.10.5",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/preact": "^3.2.4",
+    "@types/node": "^24.10.13",
+    "jsdom": "^27.4.0",
+    "typescript": "^5.9.3",
+    "vite": "^7.3.1",
+    "vitest": "^4.0.18"
+  }
+}
