@@ -98,11 +98,15 @@ export function App() {
     event.preventDefault();
     const content = draft.trim();
     if (!content || selectedId === undefined) return;
+    const requestId = crypto.randomUUID();
+    const wasRunning = live.running;
     setDraft("");
+    dispatch({ type: "optimistic_input", requestId, content });
     try {
-      await submitInput(selectedId, content, live.running);
+      await submitInput(selectedId, content, requestId, wasRunning);
       setError("");
     } catch (cause) {
+      dispatch({ type: "optimistic_revert", requestId, running: wasRunning });
       setDraft(content);
       setError(errorMessage(cause, "Could not submit input"));
     }

@@ -1,7 +1,28 @@
 import { describe, expect, it } from "vitest";
-import { initialLiveState, reduceAgentEvent } from "./live";
+import { initialLiveState, optimisticInput, reduceAgentEvent } from "./live";
 
 describe("reduceAgentEvent", () => {
+  it("shows submitted input immediately and reconciles its durable entry", () => {
+    const optimistic = optimisticInput(initialLiveState, "request-1", "Run tests");
+    expect(optimistic.running).toBe(true);
+    expect(optimistic.items).toEqual([{
+      id: "request-request-1",
+      type: "message",
+      message: { role: "user", text: "Run tests" },
+    }]);
+
+    const durable = reduceAgentEvent(optimistic, {
+      type: "message_end",
+      entry: { id: 1, conversationId: 1, kind: "pi.user", model: [{ role: "user", content: "Run tests" }] },
+    } as never);
+
+    expect(durable.items).toEqual([{
+      id: "message-1-0",
+      type: "message",
+      message: { role: "user", text: "Run tests" },
+    }]);
+  });
+
   it("restores messages and tool calls in durable entry order", () => {
     const state = reduceAgentEvent(initialLiveState, {
       type: "snapshot",

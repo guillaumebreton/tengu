@@ -1,10 +1,20 @@
 import { cleanup, render, screen } from "@testing-library/preact";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { ToolCall, Transcript } from "./components";
 
 afterEach(cleanup);
 
 describe("Transcript", () => {
+  it("scrolls to new transcript content", () => {
+    const scrollIntoView = vi.fn();
+    Element.prototype.scrollIntoView = scrollIntoView;
+    const { rerender } = render(<Transcript items={[]} />);
+
+    rerender(<Transcript items={[{ id: "message-1", type: "message", message: { role: "assistant", text: "Done" } }]} />);
+
+    expect(scrollIntoView).toHaveBeenCalled();
+  });
+
   it("shows activity at the transcript insertion point while running", () => {
     render(<Transcript items={[]} running />);
 

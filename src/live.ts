@@ -29,8 +29,28 @@ export const initialLiveState: LiveState = {
   queued: 0,
 };
 
-export function reduceAgentEvent(state: LiveState, event: AgentEvent): LiveState {
+export type LiveAction = AgentEvent
+  | { type: "optimistic_input"; requestId: string; content: string }
+  | { type: "optimistic_revert"; requestId: string; running: boolean };
+
+export function optimisticInput(state: LiveState, requestId: string, content: string): LiveState {
+  return {
+    ...state,
+    running: true,
+    items: upsertItems(state.items, [{
+      id: `request-${requestId}`,
+      type: "message",
+      message: { role: "user", text: content },
+    }]),
+  };
+}
+
+export function reduceAgentEvent(state: LiveState, event: LiveAction): LiveState {
   switch (event.type) {
+    case "optimistic_input":
+      return optimisticInput(state, event.requestId, event.content);
+    case "optimistic_revert":
+      return { ...state, running: event.running, items: state.items.filter((item) => item.id !== `request-${event.requestId}`) };
     case "snapshot":
       return {
         model: event.agent.model ? `${event.agent.model.provider}/${event.agent.model.modelId}` : "",
@@ -66,7 +86,7 @@ export function reduceAgentEvent(state: LiveState, event: AgentEvent): LiveState
         }, state.partial),
       };
     case "message_end":
-      return { ...state, items: upsertItems(state.items, itemsFromEntry(event.entry)), partial: "" };
+      return { ...state, items: reconcileEntry(state.items, event.entry), partial: "" };
     case "tool_execution_start":
       return {
         ...state,
@@ -174,6 +194,16 @@ function itemsFromEntry(entry: EntryRecord): TranscriptItem[] {
       },
     }];
   });
+}
+
+function reconcileEntry(current: TranscriptItem[], entry: EntryRecord): TranscriptItem[] {
+  const incoming = itemsFromEntry(entry);
+  if (!incoming.some((item) => item.type === "message" && item.message.role === "user")) {
+    return upsertItems(current, incoming);
+  }
+  const optimistic = current.findIndex((item) => item.id.startsWith("request-") && item.type === "message");
+  const withoutOptimistic = optimistic < 0 ? current : current.filter((_, index) => index !== optimistic);
+  return upsertItems(withoutOptimistic, incoming);
 }
 
 function upsertItems(current: TranscriptItem[], incoming: TranscriptItem[]): TranscriptItem[] {

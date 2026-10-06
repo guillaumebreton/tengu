@@ -1,4 +1,5 @@
 import type { ComponentChildren, Ref } from "preact";
+import { useEffect, useRef } from "preact/hooks";
 import type { LiveTool, TranscriptItem } from "./live";
 
 export type AgentSummary = {
@@ -120,6 +121,11 @@ export function Transcript({
   partial?: string;
   running?: boolean;
 }) {
+  const endRef = useRef<HTMLSpanElement>(null);
+  useEffect(() => {
+    endRef.current?.scrollIntoView?.({ block: "end" });
+  }, [items, partial, running]);
+
   return (
     <section class="transcript" aria-live="polite">
       {items.map((item) => item.type === "message"
@@ -129,6 +135,7 @@ export function Transcript({
           </MessageFrame>)}
       {partial && <MessageRow message={{ role: "assistant", text: partial }} />}
       {running && <span class="agent-working" role="status" aria-label="Agent is working"><i /><i /><i /></span>}
+      <span ref={endRef} />
     </section>
   );
 }

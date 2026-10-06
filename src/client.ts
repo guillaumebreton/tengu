@@ -41,11 +41,11 @@ export async function stopAgent(agentId: number): Promise<void> {
   if (!response.ok) throw new Error("Could not stop agent");
 }
 
-export async function submitInput(agentId: number, content: string, steer = false): Promise<void> {
+export async function submitInput(agentId: number, content: string, requestId: string, steer = false): Promise<void> {
   const response = await fetch(`/api/agents/${agentId}/${steer ? "steer" : "input"}`, {
     method: "POST",
     headers: { "content-type": "application/json" },
-    body: JSON.stringify({ content, requestId: crypto.randomUUID() }),
+    body: JSON.stringify({ content, requestId }),
   });
   if (!response.ok) throw new Error("Could not submit input");
 }
