@@ -84,13 +84,13 @@ export function App() {
   return (
     <div class="shell">
       <Sidebar
-        agents={agents.map((agent) => ({ ...agent, id: String(agent.id), time: "" }))}
-        activeAgentId={String(highlightedId ?? selectedId ?? "")}
+        agents={agents}
+        activeAgentId={highlightedId ?? selectedId}
         open={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
         onCreate={() => void addAgent()}
         onSelect={(id) => {
-          setSelectedId(Number(id));
+          setSelectedId(id);
           setHighlightedId(undefined);
         }}
         connection={connection}
@@ -115,7 +115,7 @@ export function App() {
           queued={live.queued}
           onStop={() => { if (selectedId !== undefined) void stopAgent(selectedId); }}
         />
-        <Transcript items={live.items} partial={live.partial} running={live.running} showExampleTool={false} />
+        <Transcript items={live.items} partial={live.partial} running={live.running} />
         <Composer value={draft} onInput={setDraft} onSubmit={send} steer={live.running} error={error} inputRef={composerRef} />
         </>}
       </main>

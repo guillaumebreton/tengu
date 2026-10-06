@@ -6,7 +6,7 @@ afterEach(cleanup);
 
 describe("Transcript", () => {
   it("shows activity at the transcript insertion point while running", () => {
-    render(<Transcript items={[]} running showExampleTool={false} />);
+    render(<Transcript items={[]} running />);
 
     expect(screen.getByLabelText("Agent is working")).toBeInTheDocument();
   });
@@ -18,7 +18,6 @@ describe("Transcript", () => {
         { type: "tool", tool: { id: "call-1", name: "bash", command: "ls", output: "src", state: "done" } },
         { type: "message", message: { role: "assistant", text: "Done" } },
       ]}
-      showExampleTool={false}
     />);
 
     expect([...container.querySelectorAll(".message")].map((node) => node.textContent)).toEqual(["Run ls", "$lssrc", "Done"]);

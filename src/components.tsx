@@ -2,10 +2,9 @@ import type { ComponentChildren, Ref } from "preact";
 import type { LiveTool, TranscriptItem } from "./live";
 
 export type AgentSummary = {
-  id: string;
+  id: number;
   title: string;
   preview: string;
-  time: string;
 };
 
 export type ModelOption = {
@@ -19,8 +18,8 @@ export type Message = {
   error?: boolean;
 };
 
-export function Status({ state, children }: { state: "connected" | "disconnected" | "working" | "idle"; children: ComponentChildren }) {
-  return <span class={state === "connected" || state === "disconnected" ? "connection-state" : "run-state"} data-state={state}><i />{children}</span>;
+export function ConnectionStatus({ state }: { state: "connected" | "disconnected" }) {
+  return <span class="connection-state" data-state={state}><i />{state}</span>;
 }
 
 export function Sidebar({
@@ -33,11 +32,11 @@ export function Sidebar({
   connection,
 }: {
   agents: AgentSummary[];
-  activeAgentId: string;
+  activeAgentId?: number;
   open: boolean;
   onClose: () => void;
   onCreate: () => void;
-  onSelect: (id: string) => void;
+  onSelect: (id: number) => void;
   connection: "connected" | "disconnected";
 }) {
   return (
@@ -58,12 +57,11 @@ export function Sidebar({
                   <strong>{agent.title}</strong>
                   <small>{agent.preview}</small>
                 </span>
-                <time>{agent.time}</time>
               </button>
             ))}
           </div>
         </nav>
-        <footer class="sidebar-footer"><Status state={connection}>{connection}</Status></footer>
+        <footer class="sidebar-footer"><ConnectionStatus state={connection} /></footer>
       </aside>
     </>
   );
@@ -117,12 +115,10 @@ export function Transcript({
   items,
   partial = "",
   running = false,
-  showExampleTool = true,
 }: {
   items: TranscriptItem[];
   partial?: string;
   running?: boolean;
-  showExampleTool?: boolean;
 }) {
   return (
     <section class="transcript" aria-live="polite">
@@ -133,16 +129,6 @@ export function Transcript({
           </MessageFrame>)}
       {partial && <MessageRow message={{ role: "assistant", text: partial }} />}
       {running && <span class="agent-working" role="status" aria-label="Agent is working"><i /><i /><i /></span>}
-      {showExampleTool && (
-        <MessageFrame role="assistant">
-          <ToolCall
-            name="bash"
-            command="npm test -- login.test.ts"
-            output="17 passed · retrying focused test…"
-            state="running"
-          />
-        </MessageFrame>
-      )}
     </section>
   );
 }
