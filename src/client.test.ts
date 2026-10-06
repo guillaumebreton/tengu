@@ -8,6 +8,7 @@ describe("messagesFromSnapshot", () => {
       entries: [
         { id: 2, conversationId: 1, kind: "pi.assistant", model: [{ role: "assistant", content: [{ type: "text", text: "Done" }] }] },
         { id: 1, conversationId: 1, kind: "pi.user", model: [{ role: "user", content: "Fix it" }] },
+        { id: 3, conversationId: 1, kind: "pi.user", model: [{ role: "user", content: "Thanks" }] },
       ],
       tools: [],
       compactions: [],
@@ -19,6 +20,7 @@ describe("messagesFromSnapshot", () => {
     expect(messages).toEqual([
       { role: "user", text: "Fix it" },
       { role: "assistant", text: "Done" },
+      { role: "user", text: "Thanks" },
     ]);
   });
 
