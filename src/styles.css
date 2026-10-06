@@ -86,15 +86,14 @@ button { cursor: pointer; }
 .message > p:last-child { margin: 0; color: var(--body); line-height: 1.65; }
 .message > .message-error { color: var(--red); }
 .message.user { padding: .7rem .8rem; background: var(--panel); }
-.tool-call { width: 100%; border-left: 2px solid var(--border-strong); background: linear-gradient(90deg, rgb(122 162 247 / 7%), transparent 45%); }
-.tool-head { display: flex; align-items: center; padding: .5rem .75rem .35rem; }
-.tool-head strong { color: var(--muted); font-size: var(--fs-tiny); font-weight: 500; }
-.tool-head strong::before { content: "▸ "; color: var(--accent); }
-.tool-head .running { margin-left: auto; }
-.tool-command { display: block; padding: .55rem .75rem; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); background: rgb(26 27 38 / 72%); color: var(--ink); font-size: var(--fs-small); line-height: 1.6; }
-.tool-command span { color: var(--accent); font-weight: 700; }
-.tool-output { margin: 0; padding: .5rem .75rem .55rem; overflow-x: auto; color: var(--muted); font: inherit; font-size: var(--fs-tiny); line-height: 1.6; white-space: pre-wrap; }
-.tool-output span { color: var(--green); }
+.tool-call { width: 100%; border: 1px solid var(--border); background: var(--panel); }
+.tool-command { display: flex; min-height: 2rem; align-items: baseline; gap: .6rem; padding: .45rem .65rem; color: var(--ink); line-height: 1.5; }
+.tool-command span { flex: 0 0 auto; color: var(--accent); font-size: var(--fs-tiny); }
+.tool-command code { overflow-wrap: anywhere; font: inherit; font-size: var(--fs-small); }
+.tool-command i { width: 5px; height: 5px; margin-left: auto; background: var(--green); }
+.tool-output, .tool-empty { margin: 0; padding: .55rem .65rem; border-top: 1px solid var(--border); color: var(--muted); font-size: var(--fs-tiny); line-height: 1.55; }
+.tool-output { overflow-x: auto; font: inherit; white-space: pre-wrap; }
+.tool-empty { color: var(--faint); }
 
 .composer-wrap { padding: 0 var(--content-inset) 1.25rem; background: var(--bg); }
 .request-error { margin: 0 0 .5rem; color: var(--red); font-size: var(--fs-tiny); }

@@ -180,13 +180,15 @@ export function ToolCall({
   state: "running" | "done";
 }) {
   return (
-    <div class="tool-call">
-      <div class="tool-head">
-        <strong>{name}</strong>
-        <span class={state}><i /> {state}</span>
+    <div class="tool-call" data-state={state}>
+      <div class="tool-command">
+        <span>{name === "bash" ? "$" : name}</span>
+        {command && <code>{command}</code>}
+        {state === "running" && <i aria-label="running" />}
       </div>
-      {command && <code class="tool-command"><span>$</span> {command}</code>}
-      {output && <pre class="tool-output"><span>{state === "done" ? "✓" : "·"}</span> {output}</pre>}
+      {output
+        ? <pre class="tool-output">{output}</pre>
+        : state === "done" && <p class="tool-empty">no output</p>}
     </div>
   );
 }

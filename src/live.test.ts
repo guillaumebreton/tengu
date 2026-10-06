@@ -2,6 +2,49 @@ import { describe, expect, it } from "vitest";
 import { initialLiveState, reduceAgentEvent } from "./live";
 
 describe("reduceAgentEvent", () => {
+  it("restores completed tool calls from durable entries", () => {
+    const state = reduceAgentEvent(initialLiveState, {
+      type: "snapshot",
+      entries: [
+        {
+          id: 1,
+          conversationId: 1,
+          kind: "pi.assistant",
+          model: [{ role: "assistant", content: [{ type: "toolCall", id: "call-1", name: "bash", arguments: { command: "ls" } }] }],
+        },
+        {
+          id: 2,
+          conversationId: 1,
+          kind: "pi.tool-result",
+          model: [{ role: "toolResult", toolCallId: "call-1", toolName: "bash", content: [{ type: "text", text: "src\npackage.json\n" }] }],
+        },
+      ],
+      tools: [], compactions: [], inbox: [], agent: {}, usage: { models: {}, tools: {} },
+    } as never);
+
+    expect(state.tools).toEqual([{ id: "call-1", name: "bash", command: "ls", output: "src\npackage.json\n", state: "done" }]);
+  });
+
+  it("takes final output from a fast tool completion", () => {
+    let state = reduceAgentEvent(initialLiveState, {
+      type: "tool_execution_start", toolCallId: "call-1", toolName: "bash", args: { command: "ls" },
+    } as never);
+
+    state = reduceAgentEvent(state, {
+      type: "tool_execution_end",
+      toolCallId: "call-1",
+      toolName: "bash",
+      entry: {
+        id: 2,
+        conversationId: 1,
+        kind: "pi.tool-result",
+        model: [{ role: "toolResult", toolCallId: "call-1", toolName: "bash", content: [{ type: "text", text: "src\n" }] }],
+      },
+    } as never);
+
+    expect(state.tools[0]).toEqual({ id: "call-1", name: "bash", command: "ls", output: "src\n", state: "done" });
+  });
+
   it("streams assistant text and tool output through a run", () => {
     let state = reduceAgentEvent(initialLiveState, {
       type: "snapshot",

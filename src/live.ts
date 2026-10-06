@@ -35,13 +35,13 @@ export function reduceAgentEvent(state: LiveState, event: AgentEvent): LiveState
         model: event.agent.model ? `${event.agent.model.provider}/${event.agent.model.modelId}` : "",
         messages: messagesFromSnapshot(event),
         partial: event.generation?.message ? messageText(event.generation.message.content) : "",
-        tools: event.tools.map((tool) => ({
+        tools: toolsFromEntries(event.entries, event.tools.map((tool) => ({
           id: tool.callId,
           name: tool.name,
           command: "",
           output: tool.output ?? "",
           state: tool.status === "done" ? "done" : "running",
-        })),
+        }))),
         running: event.run !== undefined,
         queued: event.inbox.length,
       };
@@ -89,11 +89,66 @@ export function reduceAgentEvent(state: LiveState, event: AgentEvent): LiveState
           ? { ...tool, output: updateOutput(tool.output, event.output) }
           : tool),
       };
-    case "tool_execution_end":
-      return { ...state, tools: state.tools.map((tool) => tool.id === event.toolCallId ? { ...tool, state: "done" } : tool) };
+    case "tool_execution_end": {
+      const output = event.entry ? toolResultText(event.entry) : undefined;
+      return {
+        ...state,
+        tools: state.tools.map((tool) => tool.id === event.toolCallId
+          ? { ...tool, ...(output === undefined ? {} : { output }), state: "done" }
+          : tool),
+      };
+    }
     default:
       return state;
   }
+}
+
+function toolsFromEntries(entries: readonly { id?: unknown; model?: readonly unknown[] }[], live: LiveTool[]): LiveTool[] {
+  const tools = new Map<string, LiveTool>();
+  for (const entry of [...entries].sort((a, b) => entryId(a) - entryId(b))) {
+    for (const message of entry.model ?? []) {
+      if (!isRecord(message)) continue;
+      if (message.role === "assistant" && Array.isArray(message.content)) {
+        for (const part of message.content) {
+          if (!isRecord(part) || part.type !== "toolCall" || typeof part.id !== "string" || typeof part.name !== "string") continue;
+          const args = isRecord(part.arguments) ? part.arguments : {};
+          tools.set(part.id, {
+            id: part.id,
+            name: part.name,
+            command: part.name === "bash" && typeof args.command === "string" ? args.command : JSON.stringify(args),
+            output: "",
+            state: "done",
+          });
+        }
+      }
+      if (message.role === "toolResult" && typeof message.toolCallId === "string") {
+        const tool = tools.get(message.toolCallId);
+        if (tool) tools.set(message.toolCallId, { ...tool, output: messageText(message.content), state: "done" });
+      }
+    }
+  }
+  for (const tool of live) {
+    const durable = tools.get(tool.id);
+    tools.set(tool.id, {
+      ...tool,
+      command: tool.command || durable?.command || "",
+      output: tool.output || durable?.output || "",
+    });
+  }
+  return [...tools.values()];
+}
+
+function entryId(entry: { id?: unknown }): number {
+  return typeof entry.id === "number" ? entry.id : 0;
+}
+
+function toolResultText(entry: { model?: readonly unknown[] }): string | undefined {
+  const result = entry.model?.find((message) => isRecord(message) && message.role === "toolResult");
+  return isRecord(result) ? messageText(result.content) : undefined;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
 }
 
 function messageText(content: unknown): string {
