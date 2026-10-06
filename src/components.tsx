@@ -16,6 +16,7 @@ export type ModelOption = {
 export type Message = {
   role: "user" | "assistant";
   text: string;
+  error?: boolean;
 };
 
 export function Status({ state, children }: { state: "connected" | "working" | "idle"; children: ComponentChildren }) {
@@ -135,7 +136,7 @@ export function Transcript({
 export function MessageRow({ message }: { message: Message }) {
   return (
     <MessageFrame speaker={message.role === "assistant" ? "tengu" : "you"} role={message.role}>
-      <p>{message.text}</p>
+      <p class={message.error ? "message-error" : undefined}>{message.text}</p>
     </MessageFrame>
   );
 }

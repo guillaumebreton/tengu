@@ -61,7 +61,10 @@ export function messagesFromSnapshot(snapshot: SnapshotEvent): Message[] {
     (entry.model ?? []).flatMap((message) => {
       if (message.role !== "user" && message.role !== "assistant") return [];
       const content = text(message.content);
-      return content ? [{ role: message.role, text: content }] : [];
+      const error = message.role === "assistant" && message.stopReason === "error" ? message.errorMessage : undefined;
+      return content || error
+        ? [{ role: message.role, text: content || error || "Agent request failed", ...(error ? { error: true } : {}) }]
+        : [];
     }));
 }
 
