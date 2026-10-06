@@ -25,7 +25,7 @@ async function readJson(request: IncomingMessage): Promise<unknown> {
   return JSON.parse(Buffer.concat(chunks).toString("utf8"));
 }
 
-function parseAgentRoute(pathname: string, action: "input" | "events" | "model"): ConversationId | undefined {
+function parseAgentRoute(pathname: string, action: "input" | "steer" | "events" | "model"): ConversationId | undefined {
   const match = pathname.match(new RegExp(`^/api/agents/(\\d+)/${action}$`));
   if (!match) return undefined;
   return Number(match[1]) as ConversationId;
@@ -111,7 +111,9 @@ export function createHttpServer(runtime: Runtime, publicDirectory?: string) {
         return;
       }
 
-      const conversationId = parseAgentRoute(url.pathname, "input");
+      const inputConversationId = parseAgentRoute(url.pathname, "input");
+      const steerConversationId = parseAgentRoute(url.pathname, "steer");
+      const conversationId = inputConversationId ?? steerConversationId;
       if (request.method === "POST" && conversationId !== undefined) {
         const body = await readJson(request) as { content?: unknown; requestId?: unknown };
         if (typeof body.content !== "string" || !body.content.trim() || typeof body.requestId !== "string" || !body.requestId) {
@@ -120,7 +122,12 @@ export function createHttpServer(runtime: Runtime, publicDirectory?: string) {
         }
         const conversation = await runtime.conversation(conversationId);
         const submission = await conversation.submit(
-          { type: "input", content: body.content.trim(), requestId: body.requestId },
+          {
+            type: "input",
+            content: body.content.trim(),
+            requestId: body.requestId,
+            ...(steerConversationId !== undefined ? { whenBusy: "steer" as const } : {}),
+          },
           BACKGROUND_CONTEXT,
         );
         json(response, 202, await submission.status(BACKGROUND_CONTEXT));

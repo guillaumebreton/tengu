@@ -37,8 +37,8 @@ export async function createAgent(): Promise<Agent> {
   return { id, title: "New agent", preview: "" };
 }
 
-export async function submitInput(agentId: number, content: string): Promise<void> {
-  const response = await fetch(`/api/agents/${agentId}/input`, {
+export async function submitInput(agentId: number, content: string, steer = false): Promise<void> {
+  const response = await fetch(`/api/agents/${agentId}/${steer ? "steer" : "input"}`, {
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify({ content, requestId: crypto.randomUUID() }),

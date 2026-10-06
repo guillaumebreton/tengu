@@ -11,6 +11,7 @@ class TestEventSource {
     queueMicrotask(() => this.onmessage?.(new MessageEvent("message", {
       data: JSON.stringify({
         type: "snapshot",
+        run: { inputs: [1] },
         entries: [{ id: 1, conversationId: 1, kind: "pi.user", model: [{ role: "user", content: "Fix the flaky login test" }] }],
         tools: [], compactions: [], inbox: [], agent: { model: { provider: "openai", modelId: "gpt-5.4" } }, usage: { models: {}, tools: {} },
       }),
@@ -45,9 +46,9 @@ describe("App", () => {
 
     const composer = screen.getByRole("textbox", { name: "Message Tengu" });
     fireEvent.input(composer, { target: { value: "Run the focused test again" } });
-    fireEvent.click(screen.getByRole("button", { name: "Send message" }));
+    fireEvent.click(screen.getByRole("button", { name: "Steer agent" }));
 
-    await waitFor(() => expect(fetchMock).toHaveBeenLastCalledWith("/api/agents/1/input", expect.objectContaining({ method: "POST" })));
+    await waitFor(() => expect(fetchMock).toHaveBeenLastCalledWith("/api/agents/1/steer", expect.objectContaining({ method: "POST" })));
     expect(composer).toHaveValue("");
   });
 });
