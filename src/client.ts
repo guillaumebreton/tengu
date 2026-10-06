@@ -1,5 +1,4 @@
-import type { AgentEvent, SnapshotEvent } from "@earendil-works/pi-durable";
-import type { Message } from "./components";
+import type { AgentEvent } from "@earendil-works/pi-durable";
 
 export type Model = { provider: string; id: string; name: string };
 
@@ -49,28 +48,6 @@ export async function submitInput(agentId: number, content: string, steer = fals
     body: JSON.stringify({ content, requestId: crypto.randomUUID() }),
   });
   if (!response.ok) throw new Error("Could not submit input");
-}
-
-function text(content: unknown): string {
-  if (typeof content === "string") return content;
-  if (!Array.isArray(content)) return "";
-  return content
-    .filter((part): part is { type: "text"; text: string } =>
-      typeof part === "object" && part !== null && "type" in part && part.type === "text" && "text" in part)
-    .map((part) => part.text)
-    .join("");
-}
-
-export function messagesFromSnapshot(snapshot: SnapshotEvent): Message[] {
-  return [...snapshot.entries].sort((a, b) => a.id - b.id).flatMap((entry) =>
-    (entry.model ?? []).flatMap((message) => {
-      if (message.role !== "user" && message.role !== "assistant") return [];
-      const content = text(message.content);
-      const error = message.role === "assistant" && message.stopReason === "error" ? message.errorMessage : undefined;
-      return content || error
-        ? [{ role: message.role, text: content || error || "Agent request failed", ...(error ? { error: true } : {}) }]
-        : [];
-    }));
 }
 
 export function connectToAgent(

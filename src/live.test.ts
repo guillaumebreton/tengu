@@ -35,10 +35,29 @@ describe("reduceAgentEvent", () => {
     } as never);
 
     expect(state.items).toEqual([
-      { type: "message", message: { role: "user", text: "Run ls" } },
-      { type: "tool", tool: { id: "call-1", name: "bash", command: "ls", output: "src\npackage.json\n", state: "done" } },
-      { type: "message", message: { role: "assistant", text: "Done" } },
+      { id: "message-1-0", type: "message", message: { role: "user", text: "Run ls" } },
+      { id: "tool-call-1", type: "tool", tool: { id: "call-1", name: "bash", command: "ls", output: "src\npackage.json\n", state: "done" } },
+      { id: "message-4-0", type: "message", message: { role: "assistant", text: "Done" } },
     ]);
+  });
+
+  it("restores provider failures as assistant errors", () => {
+    const state = reduceAgentEvent(initialLiveState, {
+      type: "snapshot",
+      entries: [{
+        id: 1,
+        conversationId: 1,
+        kind: "pi.assistant",
+        model: [{ role: "assistant", content: [], stopReason: "error", errorMessage: "Invalid API key" }],
+      }],
+      tools: [], compactions: [], inbox: [], agent: {}, usage: { models: {}, tools: {} },
+    } as never);
+
+    expect(state.items).toEqual([{
+      id: "message-1-0",
+      type: "message",
+      message: { role: "assistant", text: "Invalid API key", error: true },
+    }]);
   });
 
   it("takes final output from a fast tool completion", () => {
@@ -58,7 +77,7 @@ describe("reduceAgentEvent", () => {
       },
     } as never);
 
-    expect(state.items[0]).toEqual({ type: "tool", tool: { id: "call-1", name: "bash", command: "ls", output: "src\n", state: "done" } });
+    expect(state.items[0]).toEqual({ id: "tool-call-1", type: "tool", tool: { id: "call-1", name: "bash", command: "ls", output: "src\n", state: "done" } });
   });
 
   it("streams assistant text and tool output through a run", () => {
@@ -96,7 +115,7 @@ describe("reduceAgentEvent", () => {
     expect(state.running).toBe(true);
     expect(state.queued).toBe(2);
     expect(state.partial).toBe("Working");
-    expect(state.items).toContainEqual({ type: "tool", tool: { id: "call-1", name: "bash", command: "npm test", output: "2 passed", state: "running" } });
+    expect(state.items).toContainEqual({ id: "tool-call-1", type: "tool", tool: { id: "call-1", name: "bash", command: "npm test", output: "2 passed", state: "running" } });
 
     state = reduceAgentEvent(state, { type: "tool_execution_end", toolCallId: "call-1", toolName: "bash" } as never);
     state = reduceAgentEvent(state, { type: "run_end", inputs: [1] } as never);

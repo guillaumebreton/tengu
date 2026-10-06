@@ -14,9 +14,9 @@ describe("Transcript", () => {
   it("renders tool calls between surrounding messages", () => {
     const { container } = render(<Transcript
       items={[
-        { type: "message", message: { role: "user", text: "Run ls" } },
-        { type: "tool", tool: { id: "call-1", name: "bash", command: "ls", output: "src", state: "done" } },
-        { type: "message", message: { role: "assistant", text: "Done" } },
+        { id: "message-test", type: "message", message: { role: "user", text: "Run ls" } },
+        { id: "tool-call-1", type: "tool", tool: { id: "call-1", name: "bash", command: "ls", output: "src", state: "done" } },
+        { id: "message-test", type: "message", message: { role: "assistant", text: "Done" } },
       ]}
     />);
 

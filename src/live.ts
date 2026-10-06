@@ -1,5 +1,4 @@
-import type { AgentEvent } from "@earendil-works/pi-durable";
-import { messagesFromSnapshot } from "./client";
+import type { AgentEvent, EntryRecord } from "@earendil-works/pi-durable";
 import type { Message } from "./components";
 
 export type LiveTool = {
@@ -11,8 +10,8 @@ export type LiveTool = {
 };
 
 export type TranscriptItem =
-  | { type: "message"; message: Message }
-  | { type: "tool"; tool: LiveTool };
+  | { id: string; type: "message"; message: Message }
+  | { id: string; type: "tool"; tool: LiveTool };
 
 export type LiveState = {
   model: string;
@@ -66,22 +65,18 @@ export function reduceAgentEvent(state: LiveState, event: AgentEvent): LiveState
           return text;
         }, state.partial),
       };
-    case "message_end": {
-      const messages = messagesFromSnapshot({
-        type: "snapshot", entries: [event.entry], tools: [], compactions: [], inbox: [], agent: {}, usage: { models: {}, tools: {} },
-      });
-      return { ...state, items: [...state.items, ...messages.map((message) => ({ type: "message" as const, message }))], partial: "" };
-    }
+    case "message_end":
+      return { ...state, items: upsertItems(state.items, itemsFromEntry(event.entry)), partial: "" };
     case "tool_execution_start":
       return {
         ...state,
-        items: [...state.items, { type: "tool", tool: {
+        items: upsertItems(state.items, [{ id: `tool-${event.toolCallId}`, type: "tool", tool: {
           id: event.toolCallId,
           name: event.toolName,
           command: event.toolName === "bash" && typeof event.args.command === "string" ? event.args.command : JSON.stringify(event.args),
           output: "",
           state: "running",
-        }}],
+        }}]),
       };
     case "tool_execution_update":
       return {
@@ -104,11 +99,11 @@ export function reduceAgentEvent(state: LiveState, event: AgentEvent): LiveState
   }
 }
 
-function itemsFromEntries(entries: readonly { id?: unknown; model?: readonly unknown[] }[], live: LiveTool[]): TranscriptItem[] {
-  const messages = new Map<number, Message[]>();
+function itemsFromEntries(entries: readonly EntryRecord[], live: LiveTool[]): TranscriptItem[] {
+  const messages = new Map<number, TranscriptItem[]>();
   for (const entry of entries) {
-    const parsed = messagesFromSnapshot({ entries: [entry] } as never);
-    if (parsed.length > 0) messages.set(entryId(entry), parsed);
+    const parsed = itemsFromEntry(entry);
+    if (parsed.length > 0) messages.set(entry.id, parsed);
   }
   const toolsByEntry = new Map<number, LiveTool[]>();
   const toolEntries = toolsFromEntries(entries, live);
@@ -119,19 +114,18 @@ function itemsFromEntries(entries: readonly { id?: unknown; model?: readonly unk
   }
   const ids = [...new Set([...messages.keys(), ...toolsByEntry.keys()])].sort((a, b) => a - b);
   return ids.flatMap((id) => [
-    ...(messages.get(id) ?? []).map((message) => ({ type: "message" as const, message })),
-    ...(toolsByEntry.get(id) ?? []).map((tool) => ({ type: "tool" as const, tool })),
+    ...(messages.get(id) ?? []),
+    ...(toolsByEntry.get(id) ?? []).map((tool) => ({ id: `tool-${tool.id}`, type: "tool" as const, tool })),
   ]);
 }
 
-function toolsFromEntries(entries: readonly { id?: unknown; model?: readonly unknown[] }[], live: LiveTool[]): { entryId: number; tool: LiveTool }[] {
+function toolsFromEntries(entries: readonly EntryRecord[], live: LiveTool[]): { entryId: number; tool: LiveTool }[] {
   const tools = new Map<string, { entryId: number; tool: LiveTool }>();
   for (const entry of [...entries].sort((a, b) => entryId(a) - entryId(b))) {
     for (const message of entry.model ?? []) {
-      if (!isRecord(message)) continue;
-      if (message.role === "assistant" && Array.isArray(message.content)) {
+      if (message.role === "assistant") {
         for (const part of message.content) {
-          if (!isRecord(part) || part.type !== "toolCall" || typeof part.id !== "string" || typeof part.name !== "string") continue;
+          if (part.type !== "toolCall") continue;
           const args = isRecord(part.arguments) ? part.arguments : {};
           tools.set(part.id, { entryId: entryId(entry), tool: {
             id: part.id,
@@ -141,8 +135,7 @@ function toolsFromEntries(entries: readonly { id?: unknown; model?: readonly unk
             state: "done",
           }});
         }
-      }
-      if (message.role === "toolResult" && typeof message.toolCallId === "string") {
+      } else if (message.role === "toolResult") {
         const found = tools.get(message.toolCallId);
         if (found) tools.set(message.toolCallId, {
           entryId: entryId(entry),
@@ -165,17 +158,40 @@ function toolsFromEntries(entries: readonly { id?: unknown; model?: readonly unk
   return [...tools.values()];
 }
 
+function itemsFromEntry(entry: EntryRecord): TranscriptItem[] {
+  return (entry.model ?? []).flatMap((message, index) => {
+    if (message.role !== "user" && message.role !== "assistant") return [];
+    const content = typeof message.content === "string" ? message.content : messageText(message.content);
+    const error = message.role === "assistant" && message.stopReason === "error" ? message.errorMessage : undefined;
+    if (!content && !error) return [];
+    return [{
+      id: `message-${entry.id}-${index}`,
+      type: "message" as const,
+      message: {
+        role: message.role,
+        text: content || error || "Agent request failed",
+        ...(error ? { error: true } : {}),
+      },
+    }];
+  });
+}
+
+function upsertItems(current: TranscriptItem[], incoming: TranscriptItem[]): TranscriptItem[] {
+  const ids = new Set(incoming.map((item) => item.id));
+  return [...current.filter((item) => !ids.has(item.id)), ...incoming];
+}
+
 function updateTool(items: TranscriptItem[], id: string, update: (tool: LiveTool) => LiveTool): TranscriptItem[] {
   return items.map((item) => item.type === "tool" && item.tool.id === id
     ? { ...item, tool: update(item.tool) }
     : item);
 }
 
-function entryId(entry: { id?: unknown }): number {
-  return typeof entry.id === "number" ? entry.id : 0;
+function entryId(entry: EntryRecord): number {
+  return entry.id;
 }
 
-function toolResultText(entry: { model?: readonly unknown[] }): string | undefined {
+function toolResultText(entry: EntryRecord): string | undefined {
   const result = entry.model?.find((message) => isRecord(message) && message.role === "toolResult");
   return isRecord(result) ? messageText(result.content) : undefined;
 }

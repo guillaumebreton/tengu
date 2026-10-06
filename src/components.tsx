@@ -122,8 +122,8 @@ export function Transcript({
 }) {
   return (
     <section class="transcript" aria-live="polite">
-      {items.map((item, index) => item.type === "message"
-        ? <MessageRow message={item.message} key={`message-${index}`} />
+      {items.map((item) => item.type === "message"
+        ? <MessageRow message={item.message} key={item.id} />
         : <MessageFrame role="assistant" key={item.tool.id}>
             <ToolCall name={item.tool.name} command={item.tool.command} output={item.tool.output} state={item.tool.state} />
           </MessageFrame>)}
