@@ -2,6 +2,7 @@
 import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { BACKGROUND_CONTEXT } from "@earendil-works/chord/context";
 import { fauxAssistantMessage, fauxProvider } from "@earendil-works/pi-ai/providers/faux";
 import { afterEach, describe, expect, it } from "vitest";
 import { createHttpServer } from "./http";
@@ -136,7 +137,7 @@ describe("HTTP API", () => {
       body: JSON.stringify({ provider: "faux", id: "faux-1" }),
     });
     expect(response.status).toBe(204);
-    expect(await runtime.getModel(conversation.id)).toEqual({ provider: "faux", id: "faux-1" });
+    expect((await conversation.agent(BACKGROUND_CONTEXT)).model).toEqual({ provider: "faux", modelId: "faux-1" });
   });
 
   it("streams a snapshot and committed agent events", async () => {

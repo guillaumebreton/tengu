@@ -30,7 +30,10 @@ describe("runtime", () => {
     const first = await openRuntime({ database, workspace, ...fauxModels(firstProvider) });
     const conversation = await first.createConversation();
     await first.createConversation();
-    const settled = await first.submit(conversation.id, "Create proof.txt");
+    const settled = await (await conversation.submit(
+      { type: "input", content: "Create proof.txt" },
+      BACKGROUND_CONTEXT,
+    )).wait(BACKGROUND_CONTEXT);
 
     expect(settled.status).toBe("done");
     expect(await readFile(join(workspace, "proof.txt"), "utf8")).toBe("durable\n");

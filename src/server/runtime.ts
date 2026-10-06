@@ -12,7 +12,6 @@ import {
   type AgentEventStream,
   type Conversation,
   type ConversationId,
-  type SettledSubmissionRecord,
 } from "@earendil-works/pi-durable";
 import { openNodeSqliteStorage } from "@earendil-works/pi-durable/storage/sqlite/node";
 import { CodingTools } from "@earendil-works/pi-durable/tools";
@@ -24,12 +23,10 @@ export type ModelSummary = { provider: string; id: string; name: string };
 
 export type Runtime = {
   listModels(): Promise<readonly ModelSummary[]>;
-  getModel(id: ConversationId): Promise<{ provider: string; id: string }>;
   setModel(id: ConversationId, provider: string, modelId: string): Promise<void>;
   listConversations(): Promise<readonly AgentSummary[]>;
   createConversation(): Promise<Conversation>;
   conversation(id: ConversationId): Promise<Conversation>;
-  submit(id: ConversationId, content: string): Promise<SettledSubmissionRecord>;
   watch(id: ConversationId): Promise<AgentEventStream>;
   close(): Promise<void>;
 };
@@ -85,12 +82,7 @@ export async function openRuntime({
           name: model.name,
         }));
     },
-    async getModel(id) {
-      const agent = await (await getConversation(id)).agent(context);
-      if (!agent.model) throw new Error(`Conversation has no model: ${id}`);
-      return { provider: agent.model.provider, id: agent.model.modelId };
-    },
-    async setModel(id, providerId, modelId) {
+      async setModel(id, providerId, modelId) {
       if (!models.getModel(providerId, modelId)) throw new Error(`Unknown model: ${providerId}/${modelId}`);
       await (await getConversation(id)).configure({ model: { provider: providerId, modelId } }, context);
     },
@@ -127,9 +119,6 @@ export async function openRuntime({
         context,
       ),
     conversation: getConversation,
-    async submit(id, content) {
-      return (await (await getConversation(id)).submit({ type: "input", content }, context)).wait(context);
-    },
     watch: (id) => watchEvents(harness, id, context),
     close: () => harness.close(context),
   };

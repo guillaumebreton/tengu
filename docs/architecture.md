@@ -96,9 +96,8 @@ Styles are plain CSS. There is no full-stack framework, server rendering,
 utility-CSS framework, component library, GraphQL layer, or general-purpose
 client state library.
 
-Markdown output must be sanitized. A small Markdown dependency is acceptable
-because implementing a correct parser and sanitizer is not part of Tengu's
-purpose.
+Messages render as plain text. Markdown can be added later with a small parser
+and sanitizer if the plain transcript proves insufficient.
 
 ## Runtime
 
@@ -142,14 +141,16 @@ idempotency so a retried HTTP request cannot create duplicate work.
 
 ## HTTP surface
 
-Version 1 should need only:
+Version 1 exposes:
 
-- `GET /api/conversations` — list conversations;
-- `POST /api/conversations` — create a conversation;
-- `GET /api/conversations/:id/events` — stream the snapshot and events;
-- `POST /api/conversations/:id/input` — submit an input;
-- `POST /api/conversations/:id/steer` — steer busy work;
-- `POST /api/conversations/:id/stop` — stop the current run.
+- `GET /api/agents` — list agents;
+- `POST /api/agents` — create an agent;
+- `GET /api/agents/:id/events` — stream the snapshot and events;
+- `POST /api/agents/:id/input` — submit an input;
+- `POST /api/agents/:id/steer` — steer busy work;
+- `POST /api/agents/:id/stop` — stop the current run;
+- `GET /api/models` — list authenticated models;
+- `PUT /api/agents/:id/model` — change an agent's model.
 
 The server performs direct method and payload checks. It should expose only the
 small amount of data the UI consumes, but it should not introduce a generic DTO,
@@ -166,7 +167,7 @@ The interface has two views:
 - the selected conversation with messages, tool calls, status, and composer.
 
 Desktop shows the list beside the conversation. Mobile shows it as a drawer.
-Tool calls appear as compact collapsed cards. The composer sends a new input,
+Tool calls appear as compact command and output blocks. The composer sends a new input,
 steers active work, or stops it.
 
 The UI applies Pi Durable snapshots and events directly through a small reducer.
@@ -200,7 +201,7 @@ Application configuration is limited to values required to start:
 - listen host and port;
 - state file;
 - workspace path;
-- provider and default model.
+- isolated Pi agent directory.
 
 Avoid configuration for behavior that version 1 does not implement.
 
@@ -212,8 +213,8 @@ The repository exposes:
 - one development shell;
 - one small NixOS module.
 
-The module provides the package, loopback address, port, workspace, environment
-file, provider, and model. It creates a dedicated unprivileged service user and
+The module provides the package, loopback address, port, workspace, Pi agent
+directory, and optional authentication file. It creates a dedicated unprivileged service user and
 a state directory, then runs Tengu as one systemd service with restart on
 failure.
 
@@ -234,9 +235,10 @@ The authenticated user can ask the agent to run arbitrary commands as the
 service account. Tengu does not sandbox untrusted repositories. The
 authentication proxy therefore needs protection comparable to SSH access.
 
-The server limits request sizes, verifies the expected origin for mutations,
-sanitiszes rendered Markdown, and avoids logging prompts, tool output, and
-credentials by default.
+The server limits request sizes, renders messages as plain text, and avoids
+logging prompts, tool output, and credentials by default. The authentication
+proxy is responsible for rejecting untrusted origins before requests reach
+Tengu.
 
 ## Operations
 
