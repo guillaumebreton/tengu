@@ -21,4 +21,19 @@ describe("messagesFromSnapshot", () => {
       { role: "assistant", text: "Done" },
     ]);
   });
+
+  it("renders provider failures as assistant errors", () => {
+    const messages = messagesFromSnapshot({
+      type: "snapshot",
+      entries: [{
+        id: 1,
+        conversationId: 1,
+        kind: "pi.assistant",
+        model: [{ role: "assistant", content: [], stopReason: "error", errorMessage: "Invalid API key" }],
+      }],
+      tools: [], compactions: [], inbox: [], agent: {}, usage: { models: {}, tools: {} },
+    } as never);
+
+    expect(messages).toEqual([{ role: "assistant", text: "Invalid API key", error: true }]);
+  });
 });
