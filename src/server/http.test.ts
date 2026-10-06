@@ -6,6 +6,7 @@ import { fauxAssistantMessage, fauxProvider } from "@earendil-works/pi-ai/provid
 import { afterEach, describe, expect, it } from "vitest";
 import { createHttpServer } from "./http";
 import { openRuntime } from "./runtime";
+import { fauxModels } from "./test-runtime";
 
 const cleanups: Array<() => Promise<void>> = [];
 
@@ -21,7 +22,7 @@ describe("HTTP API", () => {
     const runtime = await openRuntime({
       database: join(directory, "tengu.sqlite"),
       workspace: join(directory, "workspace"),
-      provider: faux.provider,
+      ...fauxModels(faux),
     });
     const server = createHttpServer(runtime);
     await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", resolve));
@@ -56,7 +57,7 @@ describe("HTTP API", () => {
     const runtime = await openRuntime({
       database: join(directory, "tengu.sqlite"),
       workspace: join(directory, "workspace"),
-      provider: faux.provider,
+      ...fauxModels(faux),
     });
     const conversation = await runtime.createConversation();
     const server = createHttpServer(runtime);
@@ -89,7 +90,7 @@ describe("HTTP API", () => {
     const runtime = await openRuntime({
       database: join(directory, "tengu.sqlite"),
       workspace: join(directory, "workspace"),
-      provider: faux.provider,
+      ...fauxModels(faux),
     });
     const conversation = await runtime.createConversation();
     const server = createHttpServer(runtime);
@@ -143,7 +144,7 @@ describe("HTTP API", () => {
     const runtime = await openRuntime({
       database: join(directory, "tengu.sqlite"),
       workspace: join(directory, "workspace"),
-      provider: faux.provider,
+      ...fauxModels(faux),
     });
     const server = createHttpServer(runtime, publicDirectory);
     await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", resolve));
@@ -166,7 +167,7 @@ describe("HTTP API", () => {
     const runtime = await openRuntime({
       database: join(directory, "tengu.sqlite"),
       workspace: join(directory, "workspace"),
-      provider: faux.provider,
+      ...fauxModels(faux),
     });
     const conversation = await runtime.createConversation();
     const server = createHttpServer(runtime);

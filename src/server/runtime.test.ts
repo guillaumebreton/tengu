@@ -6,6 +6,7 @@ import { BACKGROUND_CONTEXT } from "@earendil-works/chord/context";
 import { fauxAssistantMessage, fauxProvider, fauxToolCall } from "@earendil-works/pi-ai/providers/faux";
 import { afterEach, describe, expect, it } from "vitest";
 import { openRuntime } from "./runtime";
+import { fauxModels } from "./test-runtime";
 
 const directories: string[] = [];
 
@@ -26,7 +27,7 @@ describe("runtime", () => {
       fauxAssistantMessage("Done."),
     ]);
 
-    const first = await openRuntime({ database, workspace, provider: firstProvider.provider });
+    const first = await openRuntime({ database, workspace, ...fauxModels(firstProvider) });
     const conversation = await first.createConversation();
     const settled = await first.submit(conversation.id, "Create proof.txt");
 
@@ -35,7 +36,7 @@ describe("runtime", () => {
     await first.close();
 
     const secondProvider = fauxProvider();
-    const second = await openRuntime({ database, workspace, provider: secondProvider.provider });
+    const second = await openRuntime({ database, workspace, ...fauxModels(secondProvider) });
     const reopened = await second.conversation(conversation.id);
 
     expect(reopened.id).toBe(conversation.id);
