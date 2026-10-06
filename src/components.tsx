@@ -102,10 +102,10 @@ export function SessionHeader({
   );
 }
 
-export function EmptyState({ onCreate }: { onCreate: () => void }) {
+export function EmptyState({ onCreate, error }: { onCreate: () => void; error?: string }) {
   return (
     <section class="empty-state">
-      <p>No agents yet.</p>
+      {error ? <p class="request-error" role="alert">{error}</p> : <p>No agents yet.</p>}
       <button onClick={onCreate}>Create agent</button>
     </section>
   );

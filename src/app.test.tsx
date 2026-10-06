@@ -32,6 +32,14 @@ afterEach(() => {
 });
 
 describe("App", () => {
+  it("shows initial loading failures", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new Error("offline")));
+
+    render(<App />);
+
+    expect(await screen.findByRole("alert")).toHaveTextContent("Could not load Tengu");
+  });
+
   it("offers to create the first agent", async () => {
     vi.stubGlobal("EventSource", TestEventSource);
     vi.stubGlobal("fetch", vi.fn()
@@ -111,5 +119,24 @@ describe("App", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "stop" }));
     await waitFor(() => expect(fetchMock).toHaveBeenLastCalledWith("/api/agents/1/stop", { method: "POST" }));
+  });
+
+  it("shows model change and stop failures", async () => {
+    vi.stubGlobal("EventSource", TestEventSource);
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(new Response(JSON.stringify([{ id: 1, title: "Agent", preview: "" }])))
+      .mockResolvedValueOnce(new Response(JSON.stringify([{ provider: "openai", id: "gpt-5.4", name: "gpt-5.4" }])))
+      .mockResolvedValueOnce(new Response(null, { status: 500 }))
+      .mockResolvedValueOnce(new Response(null, { status: 500 }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(<App />);
+    await screen.findByRole("heading", { name: "Agent" });
+
+    fireEvent.change(screen.getByRole("combobox", { name: "Model" }), { target: { value: "openai/gpt-5.4" } });
+    expect(await screen.findByRole("alert")).toHaveTextContent("Could not change model");
+
+    fireEvent.click(screen.getByRole("button", { name: "stop" }));
+    expect(await screen.findByRole("alert")).toHaveTextContent("Could not stop agent");
   });
 });
