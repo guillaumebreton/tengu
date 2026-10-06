@@ -37,6 +37,11 @@ export async function createAgent(): Promise<Agent> {
   return { id, title: "New agent", preview: "" };
 }
 
+export async function stopAgent(agentId: number): Promise<void> {
+  const response = await fetch(`/api/agents/${agentId}/stop`, { method: "POST" });
+  if (!response.ok) throw new Error("Could not stop agent");
+}
+
 export async function submitInput(agentId: number, content: string, steer = false): Promise<void> {
   const response = await fetch(`/api/agents/${agentId}/${steer ? "steer" : "input"}`, {
     method: "POST",

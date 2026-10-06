@@ -1,5 +1,5 @@
 import { useEffect, useReducer, useState } from "preact/hooks";
-import { connectToAgent, createAgent, listAgents, listModels, setAgentModel, submitInput, type Agent, type Model } from "./client";
+import { connectToAgent, createAgent, listAgents, listModels, setAgentModel, stopAgent, submitInput, type Agent, type Model } from "./client";
 import { Composer, SessionHeader, Sidebar, Transcript } from "./components";
 import { initialLiveState, reduceAgentEvent } from "./live";
 
@@ -61,6 +61,7 @@ export function App() {
           }}
           onOpenAgents={() => setSidebarOpen(true)}
           running={live.running}
+          onStop={() => { if (selectedId !== undefined) void stopAgent(selectedId); }}
         />
         <Transcript messages={live.messages} partial={live.partial} tools={live.tools} showExampleTool={false} />
         <Composer value={draft} onInput={setDraft} onSubmit={send} steer={live.running} />

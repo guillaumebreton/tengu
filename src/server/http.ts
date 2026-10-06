@@ -25,7 +25,7 @@ async function readJson(request: IncomingMessage): Promise<unknown> {
   return JSON.parse(Buffer.concat(chunks).toString("utf8"));
 }
 
-function parseAgentRoute(pathname: string, action: "input" | "steer" | "events" | "model"): ConversationId | undefined {
+function parseAgentRoute(pathname: string, action: "input" | "steer" | "stop" | "events" | "model"): ConversationId | undefined {
   const match = pathname.match(new RegExp(`^/api/agents/(\\d+)/${action}$`));
   if (!match) return undefined;
   return Number(match[1]) as ConversationId;
@@ -74,6 +74,13 @@ export function createHttpServer(runtime: Runtime, publicDirectory?: string) {
 
       if (request.method === "GET" && url.pathname === "/api/models") {
         json(response, 200, await runtime.listModels());
+        return;
+      }
+
+      const stopConversationId = parseAgentRoute(url.pathname, "stop");
+      if (request.method === "POST" && stopConversationId !== undefined) {
+        await (await runtime.conversation(stopConversationId)).abort(BACKGROUND_CONTEXT);
+        response.writeHead(204).end();
         return;
       }
 
