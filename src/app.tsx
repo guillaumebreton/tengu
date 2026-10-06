@@ -10,6 +10,8 @@ export function App() {
   const [draft, setDraft] = useState("");
   const [models, setModels] = useState<Model[]>([]);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [connection, setConnection] = useState<"connected" | "disconnected">("disconnected");
+  const [error, setError] = useState("");
 
   useEffect(() => {
     void Promise.all([listAgents(), listModels()]).then(([loadedAgents, loadedModels]) => {
@@ -21,15 +23,21 @@ export function App() {
 
   useEffect(() => {
     if (selectedId === undefined) return;
-    return connectToAgent(selectedId, dispatch);
+    setConnection("disconnected");
+    return connectToAgent(selectedId, dispatch, setConnection);
   }, [selectedId]);
 
   const selected = agents.find((agent) => agent.id === selectedId);
 
   const addAgent = async () => {
-    const agent = await createAgent();
-    setAgents((current) => [agent, ...current]);
-    setSelectedId(agent.id);
+    try {
+      const agent = await createAgent();
+      setAgents((current) => [agent, ...current]);
+      setSelectedId(agent.id);
+      setError("");
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Could not create agent");
+    }
   };
 
   const send = async (event: Event) => {
@@ -37,7 +45,13 @@ export function App() {
     const content = draft.trim();
     if (!content || selectedId === undefined) return;
     setDraft("");
-    await submitInput(selectedId, content, live.running);
+    try {
+      await submitInput(selectedId, content, live.running);
+      setError("");
+    } catch (cause) {
+      setDraft(content);
+      setError(cause instanceof Error ? cause.message : "Could not submit input");
+    }
   };
 
   return (
@@ -49,6 +63,7 @@ export function App() {
         onClose={() => setSidebarOpen(false)}
         onCreate={() => void addAgent()}
         onSelect={(id) => setSelectedId(Number(id))}
+        connection={connection}
       />
       <main class="chat">
         <SessionHeader
@@ -64,7 +79,7 @@ export function App() {
           onStop={() => { if (selectedId !== undefined) void stopAgent(selectedId); }}
         />
         <Transcript messages={live.messages} partial={live.partial} tools={live.tools} showExampleTool={false} />
-        <Composer value={draft} onInput={setDraft} onSubmit={send} steer={live.running} />
+        <Composer value={draft} onInput={setDraft} onSubmit={send} steer={live.running} error={error} />
       </main>
     </div>
   );

@@ -76,8 +76,11 @@ export function messagesFromSnapshot(snapshot: SnapshotEvent): Message[] {
 export function connectToAgent(
   agentId: number,
   receive: (event: AgentEvent) => void,
+  connection: (state: "connected" | "disconnected") => void,
 ): () => void {
   const source = new EventSource(`/api/agents/${agentId}/events`);
+  source.onopen = () => connection("connected");
+  source.onerror = () => connection("disconnected");
   source.onmessage = (message) => receive(JSON.parse(message.data) as AgentEvent);
   return () => source.close();
 }

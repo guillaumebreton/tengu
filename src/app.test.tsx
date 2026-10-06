@@ -5,17 +5,22 @@ import { App } from "./app";
 const close = vi.fn();
 
 class TestEventSource {
+  onopen: (() => void) | null = null;
+  onerror: (() => void) | null = null;
   onmessage: ((event: MessageEvent) => void) | null = null;
 
   constructor() {
-    queueMicrotask(() => this.onmessage?.(new MessageEvent("message", {
+    queueMicrotask(() => {
+      this.onopen?.();
+      this.onmessage?.(new MessageEvent("message", {
       data: JSON.stringify({
         type: "snapshot",
         run: { inputs: [1] },
         entries: [{ id: 1, conversationId: 1, kind: "pi.user", model: [{ role: "user", content: "Fix the flaky login test" }] }],
         tools: [], compactions: [], inbox: [], agent: { model: { provider: "openai", modelId: "gpt-5.4" } }, usage: { models: {}, tools: {} },
       }),
-    })));
+      }));
+    });
   }
 
   close = close;
