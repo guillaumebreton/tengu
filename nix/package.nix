@@ -6,10 +6,10 @@
 }:
 buildNpmPackage {
   pname = "tengu";
-  version = "0.1.0";
+  version = (lib.importJSON ../package.json).version;
   src = lib.cleanSource ../.;
 
-  npmDepsHash = "sha256-rsSiMA+iM4Ko0xeUkie8JFL7G9VVX+FmzHu2DuHAHm8=";
+  npmDepsHash = "sha256-4J7XhyzTq/L9kCJpHTHKc8TsejoMtIIEXHMoSphv5z8=";
   nativeBuildInputs = [ makeWrapper ];
   nodejs = nodejs_24;
 

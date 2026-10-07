@@ -25,14 +25,19 @@
             inherit system;
             overlays = [ self.overlays.default ];
           };
+          release = pkgs.callPackage ./nix/release.nix { };
         in
         {
           default = pkgs.tengu;
           tengu = pkgs.tengu;
         }
+        // nixpkgs.lib.optionalAttrs pkgs.stdenv.hostPlatform.isLinux {
+          tarball = release.tarball;
+          image = release.image;
+        }
       );
 
-      formatter = forAllSystems (system: nixpkgs.legacyPackages.${system}.nixfmt);
+      formatter = forAllSystems (system: nixpkgs.legacyPackages.${system}.nixfmt-tree);
 
       devShells = forAllSystems (
         system:

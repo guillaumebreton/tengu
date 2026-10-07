@@ -1,0 +1,42 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+  packages: write
+
+jobs:
+  release:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Verify version
+        id: version
+        run: echo "version=$(node scripts/check-version.mjs "$GITHUB_REF_NAME")" >> "$GITHUB_OUTPUT"
+      - uses: DeterminateSystems/nix-installer-action@v19
+      - uses: DeterminateSystems/magic-nix-cache-action@v13
+      - name: Install image publisher
+        run: sudo apt-get update && sudo apt-get install --yes skopeo
+      - name: Build release artifacts
+        run: |
+          nix build .#tarball --out-link result-tarball --print-build-logs
+          nix build .#image --out-link result-image --print-build-logs
+          cp -L result-tarball "tengu-${{ steps.version.outputs.version }}-linux-$(uname -m).tar.gz"
+      - name: Publish GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "$GITHUB_REF_NAME" --generate-notes "tengu-${{ steps.version.outputs.version }}-linux-$(uname -m).tar.gz"
+      - name: Publish OCI image
+        env:
+          REGISTRY_TOKEN: ${{ github.token }}
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          skopeo login ghcr.io --username "${{ github.actor }}" --password "$REGISTRY_TOKEN"
+          skopeo copy docker-archive:result-image docker://ghcr.io/${GITHUB_REPOSITORY,,}:"$VERSION"
+          skopeo copy docker-archive:result-image docker://ghcr.io/${GITHUB_REPOSITORY,,}:latest
