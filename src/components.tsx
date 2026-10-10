@@ -277,6 +277,10 @@ export function Composer({
           rows={2}
           aria-label="Message Tengu"
           placeholder="Type a message..."
+          autocomplete="off"
+          autocorrect="off"
+          autocapitalize="off"
+          spellcheck={false}
           value={value}
           onInput={(event) => onInput(event.currentTarget.value)}
           onKeyDown={(event) => {

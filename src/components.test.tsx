@@ -1,6 +1,6 @@
 import { cleanup, render, screen } from "@testing-library/preact";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { MessageRow, ToolCall, Transcript } from "./components";
+import { Composer, MessageRow, ToolCall, Transcript } from "./components";
 
 afterEach(cleanup);
 
@@ -58,6 +58,17 @@ describe("MessageRow", () => {
     expect(screen.getByText("bad")).not.toHaveAttribute("href");
     expect(screen.getByRole("link", { name: "good" })).toHaveAttribute("href", "https://example.com");
     expect(screen.getByRole("link", { name: "good" })).toHaveAttribute("rel", "noopener noreferrer");
+  });
+});
+
+describe("Composer", () => {
+  it("disables browser writing suggestions", () => {
+    render(<Composer value="" onInput={() => {}} onSubmit={() => {}} />);
+
+    const input = screen.getByRole("textbox", { name: "Message Tengu" });
+    expect(input).toHaveAttribute("autocomplete", "off");
+    expect(input).toHaveAttribute("autocorrect", "off");
+    expect(input).toHaveAttribute("autocapitalize", "off");
   });
 });
 
