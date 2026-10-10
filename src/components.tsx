@@ -77,18 +77,12 @@ export function Sidebar({
 
 export function SessionHeader({
   title,
-  models,
-  model,
-  onModelChange,
   onOpenAgents,
   running,
   queued,
   onStop,
 }: {
   title: string;
-  models: ModelOption[];
-  model: string;
-  onModelChange: (model: string) => void;
   onOpenAgents: () => void;
   running: boolean;
   queued: number;
@@ -98,13 +92,6 @@ export function SessionHeader({
     <header class="chat-header">
       <button class="menu-button" aria-label="Open agents" onClick={onOpenAgents}>☰</button>
       <h1>{title}</h1>
-      <label class="model-picker">
-        <span>model</span>
-        <select aria-label="Model" value={model} onChange={(event) => onModelChange(event.currentTarget.value)}>
-          {models.length === 0 && <option value="">configure provider</option>}
-          {models.map((candidate) => <option value={candidate.id} key={candidate.id}>{candidate.label}</option>)}
-        </select>
-      </label>
       {queued > 0 && <span class="queue-count">{queued} queued</span>}
       {running && <button class="stop-button" onClick={onStop}>stop</button>}
     </header>
@@ -260,6 +247,9 @@ export function Composer({
   steer = false,
   error,
   inputRef,
+  models,
+  model,
+  onModelChange,
 }: {
   value: string;
   onInput: (value: string) => void;
@@ -267,6 +257,9 @@ export function Composer({
   steer?: boolean;
   error?: string;
   inputRef?: Ref<HTMLTextAreaElement>;
+  models: ModelOption[];
+  model: string;
+  onModelChange: (model: string) => void;
 }) {
   return (
     <div class="composer-wrap">
@@ -291,7 +284,14 @@ export function Composer({
           }}
         />
         <div class="composer-actions">
-          <span>enter to send · shift+enter for newline</span>
+          <label class="model-picker">
+            <span>model</span>
+            <select aria-label="Model" value={model} onChange={(event) => onModelChange(event.currentTarget.value)}>
+              {models.length === 0 && <option value="">configure provider</option>}
+              {models.map((candidate) => <option value={candidate.id} key={candidate.id}>{candidate.label}</option>)}
+            </select>
+          </label>
+          <span class="composer-hint">enter to send · shift+enter for newline</span>
           <button type="submit" aria-label={steer ? "Steer agent" : "Send message"} disabled={!value.trim()}>
             {steer ? "steer ↵" : "send ↵"}
           </button>

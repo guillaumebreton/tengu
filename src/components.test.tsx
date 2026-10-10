@@ -62,8 +62,14 @@ describe("MessageRow", () => {
 });
 
 describe("Composer", () => {
+  it("places model selection beside the send action", () => {
+    render(<Composer value="" onInput={() => {}} onSubmit={() => {}} models={[{ id: "openai/gpt", label: "openai · GPT" }]} model="openai/gpt" onModelChange={() => {}} />);
+
+    expect(screen.getByRole("combobox", { name: "Model" }).closest(".composer-actions")).toBeInTheDocument();
+  });
+
   it("disables browser writing suggestions", () => {
-    render(<Composer value="" onInput={() => {}} onSubmit={() => {}} />);
+    render(<Composer value="" onInput={() => {}} onSubmit={() => {}} models={[]} model="" onModelChange={() => {}} />);
 
     const input = screen.getByRole("textbox", { name: "Message Tengu" });
     expect(input).toHaveAttribute("autocomplete", "off");

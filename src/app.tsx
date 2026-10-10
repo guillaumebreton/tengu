@@ -181,9 +181,6 @@ export function App() {
         ) : <>
         <SessionHeader
           title={selected?.title ?? "New agent"}
-          models={models.map((model) => ({ id: `${model.provider}/${model.id}`, label: `${model.provider} · ${model.name}` }))}
-          model={live.model}
-          onModelChange={(id) => void changeModel(id)}
           onOpenAgents={() => {
             setHighlightedId(selectedId);
             setSidebarOpen(true);
@@ -193,7 +190,17 @@ export function App() {
           onStop={() => void stop()}
         />
         <Transcript items={live.items} partial={live.partial} running={live.running} />
-        <Composer value={draft} onInput={setDraft} onSubmit={send} steer={live.running} error={error} inputRef={composerRef} />
+        <Composer
+          value={draft}
+          onInput={setDraft}
+          onSubmit={send}
+          steer={live.running}
+          error={error}
+          inputRef={composerRef}
+          models={models.map((model) => ({ id: `${model.provider}/${model.id}`, label: `${model.provider} · ${model.name}` }))}
+          model={live.model}
+          onModelChange={(id) => void changeModel(id)}
+        />
         </>}
       </main>
     </div>

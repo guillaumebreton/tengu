@@ -99,7 +99,7 @@ button { cursor: pointer; }
 .chat-header { gap: .875rem; padding: 0 var(--content-inset); }
 .chat-header h1 { min-width: 0; margin: 0; overflow: hidden; color: var(--ink); text-overflow: ellipsis; white-space: nowrap; font-size: var(--fs-title); font-weight: 500; }
 .menu-button { display: none; padding: .35rem; }
-.model-picker { display: flex; align-items: center; gap: .45rem; margin-left: auto; color: var(--faint); font-size: var(--fs-tiny); }
+.model-picker { display: flex; min-width: 0; align-items: center; gap: .45rem; color: var(--faint); font-size: var(--fs-tiny); }
 .model-picker select { max-width: 14rem; padding: .25rem 1.4rem .25rem .4rem; border: 1px solid transparent; border-radius: 0; background: var(--panel); color: var(--muted); font-size: var(--fs-tiny); outline: 0; }
 .model-picker select:hover { color: var(--ink); border-color: var(--border); }
 .model-picker select:focus { color: var(--ink); border-color: var(--accent); }
@@ -152,7 +152,8 @@ button { cursor: pointer; }
 .composer:focus-within { border-color: var(--accent); }
 .composer textarea { display: block; width: 100%; min-height: 4.25rem; max-height: 12rem; resize: none; padding: .75rem .8rem; border: 0; outline: 0; background: transparent; color: var(--ink); font-size: var(--fs-body); line-height: 1.5; caret-color: var(--accent); }
 .composer textarea::placeholder { color: var(--faint); }
-.composer-actions { display: flex; align-items: center; justify-content: space-between; padding: .25rem .4rem .4rem .8rem; color: var(--faint); font-size: .5625rem; }
+.composer-actions { display: flex; align-items: center; gap: .5rem; padding: .25rem .4rem .4rem .8rem; color: var(--faint); font-size: .5625rem; }
+.composer-hint { margin-left: auto; }
 .composer-actions button { padding: .3rem .55rem; border: 0; background: transparent; color: var(--accent); font-size: var(--fs-tiny); font-weight: 700; }
 .composer-actions button:hover:not(:disabled) { color: var(--ink); background: var(--raised); }
 .composer-actions button:disabled { color: var(--faint); cursor: default; }
@@ -170,12 +171,12 @@ button { cursor: pointer; }
   .menu-button { display: block; }
   .chat-header h1 { max-width: 34vw; }
   .model-picker > span { display: none; }
-  .model-picker select { max-width: 8.5rem; }
+  .model-picker select { max-width: 9rem; }
   .run-state { display: none; }
   .transcript { padding-top: 1.5rem; padding-bottom: 1.5rem; }
   .composer-wrap { padding-bottom: .75rem; }
-  .composer-actions > span { display: none; }
-  .composer-actions { justify-content: flex-end; }
+  .composer-hint { display: none; }
+  .composer-actions button { margin-left: auto; }
 }
 
 @media (prefers-reduced-motion: reduce) {
