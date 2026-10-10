@@ -25,7 +25,7 @@ async function readJson(request: IncomingMessage): Promise<unknown> {
   return JSON.parse(Buffer.concat(chunks).toString("utf8"));
 }
 
-function parseAgentRoute(pathname: string, action: "input" | "steer" | "stop" | "events" | "model"): ConversationId | undefined {
+function parseAgentRoute(pathname: string, action: "input" | "steer" | "stop" | "events" | "model" | "name"): ConversationId | undefined {
   const match = pathname.match(new RegExp(`^/api/agents/(\\d+)/${action}$`));
   if (!match) return undefined;
   return Number(match[1]) as ConversationId;
@@ -115,6 +115,18 @@ export function createHttpServer(runtime: Runtime, publicDirectory?: string) {
       if (request.method === "POST" && authPrompt) {
         const body = await readJson(request) as { value?: unknown; cancel?: unknown };
         runtime.answerAuth(authPrompt[1], authPrompt[2], body.cancel === true ? undefined : String(body.value ?? ""));
+        response.writeHead(204).end();
+        return;
+      }
+
+      const nameConversationId = parseAgentRoute(url.pathname, "name");
+      if (request.method === "PUT" && nameConversationId !== undefined) {
+        const body = await readJson(request) as { name?: unknown };
+        if (typeof body.name !== "string" || !body.name.trim()) {
+          json(response, 400, { error: "name is required" });
+          return;
+        }
+        await runtime.renameConversation(nameConversationId, body.name);
         response.writeHead(204).end();
         return;
       }

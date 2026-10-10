@@ -78,12 +78,14 @@ export function Sidebar({
 export function SessionHeader({
   title,
   onOpenAgents,
+  onRename,
   running,
   queued,
   onStop,
 }: {
   title: string;
   onOpenAgents: () => void;
+  onRename: (name: string) => void;
   running: boolean;
   queued: number;
   onStop: () => void;
@@ -91,7 +93,10 @@ export function SessionHeader({
   return (
     <header class="chat-header">
       <button class="menu-button" aria-label="Open agents" onClick={onOpenAgents}>☰</button>
-      <h1>{title}</h1>
+      <button class="agent-title" aria-label="Rename agent" onClick={() => {
+        const name = window.prompt("Agent name", title);
+        if (name?.trim()) onRename(name);
+      }}>{title}</button>
       {queued > 0 && <span class="queue-count">{queued} queued</span>}
       {running && <button class="stop-button" onClick={onStop}>stop</button>}
     </header>

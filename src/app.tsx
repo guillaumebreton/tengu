@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useReducer, useRef, useState } from "preact/hooks";
-import { answerAuth, cancelAuth, connectToAgent, createAgent, getAuthFlow, listAgents, listModels, listProviders, logoutProvider, setAgentModel, startProviderLogin, stopAgent, submitInput, type Agent, type AuthFlow, type Model, type Provider } from "./client";
+import { answerAuth, cancelAuth, connectToAgent, createAgent, getAuthFlow, listAgents, listModels, listProviders, logoutProvider, renameAgent, setAgentModel, startProviderLogin, stopAgent, submitInput, type Agent, type AuthFlow, type Model, type Provider } from "./client";
 import { Composer, EmptyState, SessionHeader, Settings, Sidebar, Transcript } from "./components";
 import { initialLiveState, reduceAgentEvent } from "./live";
 import { useGlobalShortcuts } from "./shortcuts";
@@ -181,6 +181,12 @@ export function App() {
         ) : <>
         <SessionHeader
           title={selected?.title ?? "New agent"}
+          onRename={(name) => void renameAgent(selectedId, name)
+            .then(() => {
+              setAgents((current) => current.map((agent) => agent.id === selectedId ? { ...agent, title: name.trim().slice(0, 80) } : agent));
+              setError("");
+            })
+            .catch((cause) => setError(errorMessage(cause, "Could not rename agent")))}
           onOpenAgents={() => {
             setHighlightedId(selectedId);
             setSidebarOpen(true);

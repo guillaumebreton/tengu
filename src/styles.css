@@ -97,7 +97,8 @@ button { cursor: pointer; }
 .auth-options button { text-align: left; }
 .success { color: var(--green); }
 .chat-header { gap: .875rem; padding: 0 var(--content-inset); }
-.chat-header h1 { min-width: 0; margin: 0; overflow: hidden; color: var(--ink); text-overflow: ellipsis; white-space: nowrap; font-size: var(--fs-title); font-weight: 500; }
+.agent-title { min-width: 0; margin: 0; padding: .25rem 0; overflow: hidden; border: 0; background: transparent; color: var(--ink); text-align: left; text-overflow: ellipsis; white-space: nowrap; font-size: var(--fs-title); font-weight: 500; }
+.agent-title:hover { color: var(--accent); }
 .menu-button { display: none; padding: .35rem; }
 .model-picker { display: flex; min-width: 0; align-items: center; gap: .45rem; color: var(--faint); font-size: var(--fs-tiny); }
 .model-picker select { max-width: 14rem; padding: .25rem 1.4rem .25rem .4rem; border: 1px solid transparent; border-radius: 0; background: var(--panel); color: var(--muted); font-size: var(--fs-tiny); outline: 0; }
@@ -169,7 +170,7 @@ button { cursor: pointer; }
   :root { --content-inset: .75rem; }
   .chat-header { gap: .5rem; }
   .menu-button { display: block; }
-  .chat-header h1 { max-width: 34vw; }
+  .agent-title { max-width: 50vw; }
   .model-picker > span { display: none; }
   .model-picker select { max-width: 9rem; }
   .run-state { display: none; }

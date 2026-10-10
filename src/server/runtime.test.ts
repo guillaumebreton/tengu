@@ -32,6 +32,22 @@ describe("runtime", () => {
     await runtime.close();
   });
 
+  it("persists a custom agent name", async () => {
+    const directory = await mkdtemp(join(tmpdir(), "tengu-agent-name-"));
+    directories.push(directory);
+    const database = join(directory, "tengu.sqlite");
+    const workspace = join(directory, "workspace");
+    const first = await openRuntime({ database, workspace, ...fauxModels(fauxProvider()) });
+    const conversation = await first.createConversation();
+    await first.renameConversation(conversation.id, "Release agent");
+    expect((await first.listConversations())[0].title).toBe("Release agent");
+    await first.close();
+
+    const second = await openRuntime({ database, workspace, ...fauxModels(fauxProvider()) });
+    expect((await second.listConversations())[0].title).toBe("Release agent");
+    await second.close();
+  });
+
   it("persists a coding conversation in the shared workspace", async () => {
     const directory = await mkdtemp(join(tmpdir(), "tengu-runtime-"));
     directories.push(directory);

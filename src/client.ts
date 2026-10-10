@@ -79,6 +79,13 @@ export async function createAgent(): Promise<Agent> {
   return { id, title: "New agent", preview: "" };
 }
 
+export async function renameAgent(agentId: number, name: string): Promise<void> {
+  const response = await fetch(`/api/agents/${agentId}/name`, {
+    method: "PUT", headers: { "content-type": "application/json" }, body: JSON.stringify({ name }),
+  });
+  if (!response.ok) throw new Error("Could not rename agent");
+}
+
 export async function stopAgent(agentId: number): Promise<void> {
   const response = await fetch(`/api/agents/${agentId}/stop`, { method: "POST" });
   if (!response.ok) throw new Error("Could not stop agent");

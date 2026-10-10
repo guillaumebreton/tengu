@@ -6,6 +6,7 @@ import type { ModelRuntime } from "@earendil-works/pi-coding-agent";
 import { NodeExecutionEnv } from "@earendil-works/pi-durable/env/node";
 import {
   createRegistry,
+  defineDoc,
   defineExtension,
   Harness,
   section,
@@ -23,6 +24,13 @@ const context = BACKGROUND_CONTEXT;
 export type AgentSummary = { id: ConversationId; title: string; preview: string };
 export type ModelSummary = { provider: string; id: string; name: string };
 
+const AgentNames = defineDoc<{ items: Record<string, string> }>({
+  kind: "tengu.agent-names",
+  version: 1,
+  scope: "session",
+  initial: () => ({ items: {} }),
+});
+
 export type Runtime = {
   listModels(): Promise<readonly ModelSummary[]>;
   listProviders(): readonly ProviderSummary[];
@@ -33,6 +41,7 @@ export type Runtime = {
   logoutProvider(providerId: string): Promise<void>;
   setModel(id: ConversationId, provider: string, modelId: string): Promise<void>;
   listConversations(): Promise<readonly AgentSummary[]>;
+  renameConversation(id: ConversationId, name: string): Promise<void>;
   createConversation(): Promise<Conversation>;
   conversation(id: ConversationId): Promise<Conversation>;
   watch(id: ConversationId): Promise<AgentEventStream>;
@@ -114,6 +123,7 @@ export async function openRuntime({
       await (await getConversation(id)).configure({ model: { provider: providerId, modelId } }, context);
     },
     async listConversations() {
+      const names = await harness.snapshot(AgentNames, context) ?? { items: {} };
       const records = (await storage.scanConversations({}, 100, undefined, context)).items
         .filter((conversation) => conversation.owner === undefined)
         .sort((a, b) => b.id - a.id);
@@ -130,8 +140,16 @@ export async function openRuntime({
             : message.content.filter((part) => part.type === "text").map((part) => part.text).join("");
         };
         const firstUser = [...messages].reverse().find((message) => message.role === "user");
-        return { id, title: text(firstUser) || "New agent", preview: text(messages[0]) };
+        return { id, title: names.items[String(id)] || text(firstUser) || "New agent", preview: text(messages[0]) };
       }));
+    },
+    async renameConversation(id, name) {
+      await getConversation(id);
+      const trimmed = name.trim();
+      if (!trimmed) throw new Error("Agent name is required");
+      await harness.commit(async (tx) => {
+        (await tx.doc(AgentNames)).items[String(id)] = trimmed.slice(0, 80);
+      }, context);
     },
     createConversation: async () => {
       const available = await models.getAvailable();

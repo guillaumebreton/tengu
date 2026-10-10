@@ -79,7 +79,7 @@ describe("App", () => {
     vi.stubGlobal("fetch", fetchMock);
 
     render(<App />);
-    expect(await screen.findByRole("heading", { name: "Second agent" })).toBeInTheDocument();
+    expect(await screen.findByRole("button", { name: "Rename agent" })).toHaveTextContent("Second agent");
 
     fireEvent.keyDown(window, { key: "c" });
     expect(screen.getByRole("textbox", { name: "Message Tengu" })).toHaveFocus();
@@ -89,14 +89,14 @@ describe("App", () => {
 
     fireEvent.keyDown(window, { key: "j" });
     fireEvent.keyDown(window, { key: "Enter" });
-    expect(await screen.findByRole("heading", { name: "First agent" })).toBeInTheDocument();
+    expect(await screen.findByRole("button", { name: "Rename agent" })).toHaveTextContent("First agent");
 
     fireEvent.keyDown(window, { key: "Escape" });
     expect(screen.getByRole("complementary")).toHaveAttribute("data-open", "false");
 
     fireEvent.keyDown(window, { key: "n" });
     await waitFor(() => expect(fetchMock).toHaveBeenCalledWith("/api/agents", { method: "POST" }));
-    expect(await screen.findByRole("heading", { name: "New agent" })).toBeInTheDocument();
+    expect(await screen.findByRole("button", { name: "Rename agent" })).toHaveTextContent("New agent");
   });
 
   it("shows a selected agent and submits a prompt", async () => {
@@ -112,7 +112,7 @@ describe("App", () => {
 
     render(<App />);
 
-    expect(await screen.findByRole("heading", { name: "Fix the flaky login test" })).toBeInTheDocument();
+    expect(await screen.findByRole("button", { name: "Rename agent" })).toHaveTextContent("Fix the flaky login test");
     const userMessage = await screen.findByText("Fix the flaky login test", { selector: ".message > p:last-child" });
     expect(userMessage.closest(".message")).toHaveClass("user");
     expect(screen.queryByText("you", { selector: ".speaker" })).not.toBeInTheDocument();
@@ -136,6 +136,22 @@ describe("App", () => {
     await waitFor(() => expect(fetchMock).toHaveBeenLastCalledWith("/api/agents/1/stop", { method: "POST" }));
   });
 
+  it("renames the selected agent", async () => {
+    vi.stubGlobal("EventSource", TestEventSource);
+    vi.spyOn(window, "prompt").mockReturnValue("Release agent");
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(new Response(JSON.stringify([{ id: 1, title: "Agent", preview: "" }])))
+      .mockResolvedValueOnce(new Response(JSON.stringify([{ provider: "openai", id: "gpt-5.4", name: "gpt-5.4" }])))
+      .mockResolvedValueOnce(new Response(null, { status: 204 }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(<App />);
+    fireEvent.click(await screen.findByRole("button", { name: "Rename agent" }));
+
+    expect(await screen.findByRole("button", { name: "Rename agent" })).toHaveTextContent("Release agent");
+    expect(fetchMock).toHaveBeenLastCalledWith("/api/agents/1/name", expect.objectContaining({ method: "PUT" }));
+  });
+
   it("shows model change and stop failures", async () => {
     vi.stubGlobal("EventSource", TestEventSource);
     const fetchMock = vi.fn()
@@ -146,7 +162,7 @@ describe("App", () => {
     vi.stubGlobal("fetch", fetchMock);
 
     render(<App />);
-    await screen.findByRole("heading", { name: "Agent" });
+    await screen.findByRole("button", { name: "Rename agent" });
 
     fireEvent.change(screen.getByRole("combobox", { name: "Model" }), { target: { value: "openai/gpt-5.4" } });
     expect(await screen.findByRole("alert")).toHaveTextContent("Could not change model");
