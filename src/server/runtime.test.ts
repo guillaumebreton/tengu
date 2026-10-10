@@ -15,6 +15,23 @@ afterEach(async () => {
 });
 
 describe("runtime", () => {
+  it("lists only models backed by stored credentials", async () => {
+    const directory = await mkdtemp(join(tmpdir(), "tengu-model-filter-"));
+    directories.push(directory);
+    const faux = fauxProvider();
+    const configured = fauxModels(faux);
+    const runtime = await openRuntime({
+      database: join(directory, "tengu.sqlite"),
+      workspace: join(directory, "workspace"),
+      ...configured,
+      storedProviderIds: async () => [],
+    });
+
+    expect(await runtime.listModels()).toEqual([]);
+    await expect(runtime.createConversation()).rejects.toThrow("Configure a model provider");
+    await runtime.close();
+  });
+
   it("persists a coding conversation in the shared workspace", async () => {
     const directory = await mkdtemp(join(tmpdir(), "tengu-runtime-"));
     directories.push(directory);

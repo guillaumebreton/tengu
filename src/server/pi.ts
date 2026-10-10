@@ -25,6 +25,7 @@ export async function loadPi(agentDirectory: string) {
   return {
     models,
     providerModels: { models, deviceId },
+    storedProviderIds: async () => (await models.listCredentials()).map((credential) => credential.providerId),
     ...(preferred ? { defaultModel: { provider: preferred.provider, modelId: preferred.id } } : {}),
   };
 }

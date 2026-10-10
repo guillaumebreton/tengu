@@ -45,11 +45,13 @@ export async function openRuntime({
   models,
   defaultModel,
   providerModels,
+  storedProviderIds,
 }: {
   database: string;
   workspace: string;
   models: Models;
   providerModels?: { models: ModelRuntime; deviceId: string };
+  storedProviderIds?: () => Promise<readonly string[]>;
   defaultModel?: { provider: string; modelId: string };
 }): Promise<Runtime> {
   await Promise.all([mkdir(dirname(database), { recursive: true }), mkdir(workspace, { recursive: true })]);
@@ -83,7 +85,10 @@ export async function openRuntime({
 
   return {
     async listModels() {
-      return (await models.getAvailable()).map((model) => ({
+      const providers = storedProviderIds ? await storedProviderIds() : undefined;
+      return (await models.getAvailable())
+        .filter((model) => providers === undefined || providers.includes(model.provider))
+        .map((model) => ({
         provider: model.provider,
         id: model.id,
           name: model.name,
@@ -129,7 +134,11 @@ export async function openRuntime({
       }));
     },
     createConversation: async () => {
-      const selected = defaultModel ?? (await models.getAvailable())[0];
+      const available = await models.getAvailable();
+      const providers = storedProviderIds ? await storedProviderIds() : undefined;
+      const selected = defaultModel && (providers === undefined || providers.includes(defaultModel.provider))
+        ? defaultModel
+        : available.find((model) => providers === undefined || providers.includes(model.provider));
       if (!selected) throw new Error("Configure a model provider before creating an agent");
       return harness.createConversation(
         {
