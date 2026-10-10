@@ -79,6 +79,13 @@ describe("Composer", () => {
 });
 
 describe("ToolCall", () => {
+  it("renders edit patches as line-level diffs", () => {
+    const { container } = render(<ToolCall name="edit" command='{"path":"a.ts"}' output="Successfully replaced" diff={'--- a.ts\n+++ a.ts\n@@ -1 +1 @@\n-old\n+new'} state="done" />);
+
+    expect(container.querySelector(".diff-line.removed")).toHaveTextContent("-old");
+    expect(container.querySelector(".diff-line.added")).toHaveTextContent("+new");
+  });
+
   it("shows successful commands that produced no output", () => {
     render(<ToolCall name="bash" command="ls" output="" state="done" />);
 

@@ -191,7 +191,7 @@ export function Transcript({
       {items.map((item) => item.type === "message"
         ? <MessageRow message={item.message} key={item.id} />
         : <MessageFrame role="assistant" key={item.tool.id}>
-            <ToolCall name={item.tool.name} command={item.tool.command} output={item.tool.output} state={item.tool.state} />
+            <ToolCall name={item.tool.name} command={item.tool.command} output={item.tool.output} diff={item.tool.diff} state={item.tool.state} />
           </MessageFrame>)}
       {partial && <MessageRow message={{ role: "assistant", text: partial }} />}
       {running && <span class="agent-working" role="status" aria-label="Agent is working"><i /><i /><i /></span>}
@@ -220,15 +220,25 @@ function MessageFrame({
   return <article class={`message ${role}`}>{children}</article>;
 }
 
+function diffLineKind(line: string): string {
+  if (line.startsWith("+++ ") || line.startsWith("--- ")) return "file";
+  if (line.startsWith("@@")) return "hunk";
+  if (line.startsWith("+")) return "added";
+  if (line.startsWith("-")) return "removed";
+  return "context";
+}
+
 export function ToolCall({
   name,
   command,
   output,
+  diff,
   state,
 }: {
   name: string;
   command: string;
   output: string;
+  diff?: string;
   state: "running" | "done";
 }) {
   return (
@@ -238,9 +248,11 @@ export function ToolCall({
         {command && <code>{command}</code>}
         {state === "running" && <i aria-label="running" />}
       </div>
-      {output
-        ? <pre class="tool-output">{output}</pre>
-        : state === "done" && <p class="tool-empty">no output</p>}
+      {diff
+        ? <pre class="tool-diff">{diff.split("\n").map((line, index) => <span class={`diff-line ${diffLineKind(line)}`} key={index}>{line || " "}</span>)}</pre>
+        : output
+          ? <pre class="tool-output">{output}</pre>
+          : state === "done" && <p class="tool-empty">no output</p>}
     </div>
   );
 }

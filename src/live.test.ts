@@ -81,6 +81,20 @@ describe("reduceAgentEvent", () => {
     }]);
   });
 
+  it("restores unified patches from edit tool results", () => {
+    const state = reduceAgentEvent(initialLiveState, {
+      type: "snapshot",
+      agent: {},
+      entries: [
+        { id: 1, conversationId: 1, kind: "pi.assistant", model: [{ role: "assistant", content: [{ type: "toolCall", id: "edit-1", name: "edit", arguments: { path: "a.ts", edits: [] } }] }] },
+        { id: 2, conversationId: 1, kind: "pi.tool-result", model: [{ role: "toolResult", toolCallId: "edit-1", toolName: "edit", content: [{ type: "text", text: "Successfully replaced" }], details: { patch: "--- a.ts\n+++ a.ts\n@@ -1 +1 @@\n-old\n+new" } }] },
+      ],
+      tools: [], compactions: [], inbox: [], usage: { models: {}, tools: {} },
+    } as never);
+
+    expect(state.items.find((item) => item.type === "tool")?.tool.diff).toContain("-old\n+new");
+  });
+
   it("takes final output from a fast tool completion", () => {
     let state = reduceAgentEvent(initialLiveState, {
       type: "tool_execution_start", toolCallId: "call-1", toolName: "bash", args: { command: "ls" },

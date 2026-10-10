@@ -6,6 +6,7 @@ export type LiveTool = {
   name: string;
   command: string;
   output: string;
+  diff?: string;
   state: "running" | "done";
 };
 
@@ -93,7 +94,7 @@ export function reduceAgentEvent(state: LiveState, event: LiveAction): LiveState
         items: upsertItems(state.items, [{ id: `tool-${event.toolCallId}`, type: "tool", tool: {
           id: event.toolCallId,
           name: event.toolName,
-          command: event.toolName === "bash" && typeof event.args.command === "string" ? event.args.command : JSON.stringify(event.args),
+          command: toolCommand(event.toolName, event.args),
           output: "",
           state: "running",
         }}]),
@@ -104,12 +105,13 @@ export function reduceAgentEvent(state: LiveState, event: LiveAction): LiveState
         items: updateTool(state.items, event.toolCallId, (tool) => ({ ...tool, output: updateOutput(tool.output, event.output) })),
       };
     case "tool_execution_end": {
-      const output = event.entry ? toolResultText(event.entry) : undefined;
+      const result = event.entry ? toolResult(event.entry) : undefined;
       return {
         ...state,
         items: updateTool(state.items, event.toolCallId, (tool) => ({
           ...tool,
-          ...(output === undefined ? {} : { output }),
+          ...(result?.output === undefined ? {} : { output: result.output }),
+          ...(result?.diff === undefined ? {} : { diff: result.diff }),
           state: "done",
         })),
       };
@@ -150,7 +152,7 @@ function toolsFromEntries(entries: readonly EntryRecord[], live: LiveTool[]): { 
           tools.set(part.id, { entryId: entryId(entry), tool: {
             id: part.id,
             name: part.name,
-            command: part.name === "bash" && typeof args.command === "string" ? args.command : JSON.stringify(args),
+            command: toolCommand(part.name, args),
             output: "",
             state: "done",
           }});
@@ -159,7 +161,7 @@ function toolsFromEntries(entries: readonly EntryRecord[], live: LiveTool[]): { 
         const found = tools.get(message.toolCallId);
         if (found) tools.set(message.toolCallId, {
           entryId: entryId(entry),
-          tool: { ...found.tool, output: messageText(message.content), state: "done" },
+          tool: { ...found.tool, output: messageText(message.content), ...(toolPatch(message.details) ? { diff: toolPatch(message.details) } : {}), state: "done" },
         });
       }
     }
@@ -221,9 +223,25 @@ function entryId(entry: EntryRecord): number {
   return entry.id;
 }
 
-function toolResultText(entry: EntryRecord): string | undefined {
+function toolResult(entry: EntryRecord): { output: string; diff?: string } | undefined {
   const result = entry.model?.find((message) => isRecord(message) && message.role === "toolResult");
-  return isRecord(result) ? messageText(result.content) : undefined;
+  if (!isRecord(result)) return undefined;
+  const diff = toolPatch(result.details);
+  return { output: messageText(result.content), ...(diff ? { diff } : {}) };
+}
+
+function toolResultText(entry: EntryRecord): string | undefined {
+  return toolResult(entry)?.output;
+}
+
+function toolCommand(name: string, args: Record<string, unknown>): string {
+  if (name === "bash" && typeof args.command === "string") return args.command;
+  if ((name === "edit" || name === "write") && typeof args.path === "string") return args.path;
+  return JSON.stringify(args);
+}
+
+function toolPatch(details: unknown): string | undefined {
+  return isRecord(details) && typeof details.patch === "string" ? details.patch : undefined;
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

@@ -143,9 +143,15 @@ button { cursor: pointer; }
 .tool-command span { flex: 0 0 auto; color: var(--accent); font-size: var(--fs-tiny); }
 .tool-command code { overflow-wrap: anywhere; font: inherit; font-size: var(--fs-small); }
 .tool-command i { width: 5px; height: 5px; margin-left: auto; background: var(--green); }
-.tool-output, .tool-empty { margin: 0; padding: .55rem .65rem; border-top: 1px solid var(--border); color: var(--muted); font-size: var(--fs-tiny); line-height: 1.55; }
+.tool-output, .tool-empty, .tool-diff { margin: 0; padding: .55rem .65rem; border-top: 1px solid var(--border); color: var(--muted); font-size: var(--fs-tiny); line-height: 1.55; }
 .tool-output { overflow-x: auto; font: inherit; white-space: pre-wrap; }
 .tool-empty { color: var(--faint); }
+.tool-diff { overflow-x: auto; background: var(--bg); font: inherit; }
+.diff-line { display: block; min-width: max-content; padding: 0 .25rem; white-space: pre; }
+.diff-line.added { color: var(--green); background: rgb(158 206 106 / 8%); }
+.diff-line.removed { color: var(--red); background: rgb(247 118 142 / 8%); }
+.diff-line.hunk { color: var(--accent); }
+.diff-line.file { color: var(--faint); }
 
 .composer-wrap { padding: 0 var(--content-inset) 1.25rem; background: var(--bg); }
 .request-error { margin: 0 0 .5rem; color: var(--red); font-size: var(--fs-tiny); }
