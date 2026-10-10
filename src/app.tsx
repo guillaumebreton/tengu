@@ -114,6 +114,23 @@ export function App() {
     event.preventDefault();
     const content = draft.trim();
     if (!content || selectedId === undefined) return;
+    if (content === "/rename" || content.startsWith("/rename ")) {
+      const name = content.slice("/rename".length).trim();
+      if (!name) {
+        setError("Usage: /rename <name>");
+        return;
+      }
+      try {
+        await renameAgent(selectedId, name);
+        const title = name.slice(0, 80);
+        setAgents((current) => current.map((agent) => agent.id === selectedId ? { ...agent, title } : agent));
+        setDraft("");
+        setError("");
+      } catch (cause) {
+        setError(errorMessage(cause, "Could not rename agent"));
+      }
+      return;
+    }
     const requestId = crypto.randomUUID();
     const wasRunning = live.running;
     setDraft("");
@@ -181,12 +198,6 @@ export function App() {
         ) : <>
         <SessionHeader
           title={selected?.title ?? "New agent"}
-          onRename={(name) => void renameAgent(selectedId, name)
-            .then(() => {
-              setAgents((current) => current.map((agent) => agent.id === selectedId ? { ...agent, title: name.trim().slice(0, 80) } : agent));
-              setError("");
-            })
-            .catch((cause) => setError(errorMessage(cause, "Could not rename agent")))}
           onOpenAgents={() => {
             setHighlightedId(selectedId);
             setSidebarOpen(true);

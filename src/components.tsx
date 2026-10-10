@@ -78,54 +78,20 @@ export function Sidebar({
 export function SessionHeader({
   title,
   onOpenAgents,
-  onRename,
   running,
   queued,
   onStop,
 }: {
   title: string;
   onOpenAgents: () => void;
-  onRename: (name: string) => void;
   running: boolean;
   queued: number;
   onStop: () => void;
 }) {
-  const [editing, setEditing] = useState(false);
-  const [name, setName] = useState(title);
-  const inputRef = useRef<HTMLInputElement>(null);
-  useEffect(() => setName(title), [title]);
-  const cancel = () => {
-    setName(title);
-    setEditing(false);
-  };
-  const submit = () => {
-    const trimmed = name.trim();
-    if (!trimmed) return;
-    if (trimmed !== title) onRename(trimmed);
-    setEditing(false);
-  };
   return (
     <header class="chat-header">
       <button class="menu-button" aria-label="Open agents" onClick={onOpenAgents}>☰</button>
-      {editing
-        ? <input
-            ref={(element) => {
-              inputRef.current = element;
-              element?.select();
-            }}
-            class="agent-title-input"
-            aria-label="Agent name"
-            value={name}
-            maxlength={80}
-            autofocus
-            onInput={(event) => setName(event.currentTarget.value)}
-            onBlur={submit}
-            onKeyDown={(event) => {
-              if (event.key === "Enter") submit();
-              if (event.key === "Escape") cancel();
-            }}
-          />
-        : <button class="agent-title" aria-label="Rename agent" onClick={() => setEditing(true)}>{title}</button>}
+      <span class="agent-title">{title}</span>
       {queued > 0 && <span class="queue-count">{queued} queued</span>}
       {running && <button class="stop-button" onClick={onStop}>stop</button>}
     </header>
