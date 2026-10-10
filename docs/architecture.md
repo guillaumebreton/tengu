@@ -156,6 +156,7 @@ Version 1 exposes:
 - `POST /api/agents/:id/input` — submit an input;
 - `POST /api/agents/:id/steer` — steer busy work;
 - `POST /api/agents/:id/stop` — stop the current run;
+- `PUT /api/agents/:id/name` — persist a custom agent name;
 - `GET /api/models` — list available authenticated models;
 - `PUT /api/agents/:id/model` — change an agent's model;
 - `GET /api/providers` — list Pi providers and authentication status;
