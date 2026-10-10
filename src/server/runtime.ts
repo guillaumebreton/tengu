@@ -16,8 +16,9 @@ import {
   type ConversationId,
 } from "@earendil-works/pi-durable";
 import { openNodeSqliteStorage } from "@earendil-works/pi-durable/storage/sqlite/node";
-import { CodingTools } from "@earendil-works/pi-durable/tools";
+import { createBashTool, createEditTool, createReadTool } from "@earendil-works/pi-durable/tools";
 import { ProviderSettings, type AuthFlowState, type ProviderSummary } from "./providers.js";
+import { createTenguWriteTool } from "./write-tool.js";
 
 const context = BACKGROUND_CONTEXT;
 
@@ -67,6 +68,10 @@ export async function openRuntime({
 
   const providers = providerModels ? new ProviderSettings(providerModels.models, providerModels.deviceId) : undefined;
   const registry = createRegistry();
+  const CodingTools = defineExtension({
+    name: "tengu-coding-tools",
+    tools: [createReadTool(), createTenguWriteTool(), createEditTool(), createBashTool()],
+  });
   const Tengu = defineExtension({
     name: "tengu",
     sections: [section("preamble", () => "You are a concise coding agent. Work directly in the shared workspace.", { tag: false })],
