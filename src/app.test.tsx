@@ -136,9 +136,8 @@ describe("App", () => {
     await waitFor(() => expect(fetchMock).toHaveBeenLastCalledWith("/api/agents/1/stop", { method: "POST" }));
   });
 
-  it("renames the selected agent", async () => {
+  it("renames the selected agent inline", async () => {
     vi.stubGlobal("EventSource", TestEventSource);
-    vi.spyOn(window, "prompt").mockReturnValue("Release agent");
     const fetchMock = vi.fn()
       .mockResolvedValueOnce(new Response(JSON.stringify([{ id: 1, title: "Agent", preview: "" }])))
       .mockResolvedValueOnce(new Response(JSON.stringify([{ provider: "openai", id: "gpt-5.4", name: "gpt-5.4" }])))
@@ -147,9 +146,28 @@ describe("App", () => {
 
     render(<App />);
     fireEvent.click(await screen.findByRole("button", { name: "Rename agent" }));
+    const name = screen.getByRole("textbox", { name: "Agent name" });
+    fireEvent.input(name, { target: { value: "Release agent" } });
+    fireEvent.keyDown(name, { key: "Enter" });
 
     expect(await screen.findByRole("button", { name: "Rename agent" })).toHaveTextContent("Release agent");
     expect(fetchMock).toHaveBeenLastCalledWith("/api/agents/1/name", expect.objectContaining({ method: "PUT" }));
+  });
+
+  it("cancels an inline rename with Escape", async () => {
+    vi.stubGlobal("EventSource", TestEventSource);
+    vi.stubGlobal("fetch", vi.fn()
+      .mockResolvedValueOnce(new Response(JSON.stringify([{ id: 1, title: "Agent", preview: "" }])))
+      .mockResolvedValueOnce(new Response(JSON.stringify([{ provider: "openai", id: "gpt-5.4", name: "gpt-5.4" }]))));
+
+    render(<App />);
+    fireEvent.click(await screen.findByRole("button", { name: "Rename agent" }));
+    const name = screen.getByRole("textbox", { name: "Agent name" });
+    fireEvent.input(name, { target: { value: "Discard me" } });
+    fireEvent.keyDown(name, { key: "Escape" });
+
+    expect(screen.queryByRole("textbox", { name: "Agent name" })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Rename agent" })).toHaveTextContent("Agent");
   });
 
   it("shows model change and stop failures", async () => {
