@@ -49,7 +49,22 @@ describe("App", () => {
     render(<App />);
 
     expect(await screen.findByText("No agents yet.")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Create agent" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Configure provider" })).toBeInTheDocument();
+  });
+
+  it("opens provider settings and offers Codex OAuth", async () => {
+    vi.stubGlobal("fetch", vi.fn()
+      .mockResolvedValueOnce(new Response(JSON.stringify([])))
+      .mockResolvedValueOnce(new Response(JSON.stringify([])))
+      .mockResolvedValueOnce(new Response(JSON.stringify([{ id: "openai-codex", name: "OpenAI Codex", configured: false, source: null, label: null, apiKey: false, oauth: "Sign in with ChatGPT", models: 4 }]))));
+
+    render(<App />);
+    await screen.findByText("No agents yet.");
+    fireEvent.click(screen.getByRole("button", { name: "Configure provider" }));
+
+    expect(await screen.findByRole("region", { name: "Settings" })).toBeInTheDocument();
+    expect(await screen.findByText("OpenAI Codex")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Sign in with ChatGPT" })).toBeInTheDocument();
   });
 
   it("supports global keyboard actions", async () => {

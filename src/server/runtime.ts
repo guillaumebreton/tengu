@@ -2,6 +2,7 @@ import { mkdir } from "node:fs/promises";
 import { dirname } from "node:path";
 import { BACKGROUND_CONTEXT } from "@earendil-works/chord/context";
 import type { Models } from "@earendil-works/pi-ai/models";
+import type { ModelRuntime } from "@earendil-works/pi-coding-agent";
 import { NodeExecutionEnv } from "@earendil-works/pi-durable/env/node";
 import {
   createRegistry,
@@ -15,6 +16,7 @@ import {
 } from "@earendil-works/pi-durable";
 import { openNodeSqliteStorage } from "@earendil-works/pi-durable/storage/sqlite/node";
 import { CodingTools } from "@earendil-works/pi-durable/tools";
+import { ProviderSettings, type AuthFlowState, type ProviderSummary } from "./providers.js";
 
 const context = BACKGROUND_CONTEXT;
 
@@ -23,6 +25,12 @@ export type ModelSummary = { provider: string; id: string; name: string };
 
 export type Runtime = {
   listModels(): Promise<readonly ModelSummary[]>;
+  listProviders(): readonly ProviderSummary[];
+  startProviderLogin(providerId: string, type: "api_key" | "oauth"): string;
+  authFlow(id: string): AuthFlowState;
+  answerAuth(flowId: string, promptId: string, value?: string): void;
+  cancelAuth(flowId: string): void;
+  logoutProvider(providerId: string): Promise<void>;
   setModel(id: ConversationId, provider: string, modelId: string): Promise<void>;
   listConversations(): Promise<readonly AgentSummary[]>;
   createConversation(): Promise<Conversation>;
@@ -36,16 +44,17 @@ export async function openRuntime({
   workspace,
   models,
   defaultModel,
-  modelProviders,
+  providerModels,
 }: {
   database: string;
   workspace: string;
   models: Models;
-  defaultModel: { provider: string; modelId: string };
-  modelProviders?: readonly string[];
+  providerModels?: { models: ModelRuntime; deviceId: string };
+  defaultModel?: { provider: string; modelId: string };
 }): Promise<Runtime> {
   await Promise.all([mkdir(dirname(database), { recursive: true }), mkdir(workspace, { recursive: true })]);
 
+  const providers = providerModels ? new ProviderSettings(providerModels.models, providerModels.deviceId) : undefined;
   const registry = createRegistry();
   const Tengu = defineExtension({
     name: "tengu",
@@ -74,15 +83,28 @@ export async function openRuntime({
 
   return {
     async listModels() {
-      return (await models.getAvailable())
-        .filter((model) => modelProviders === undefined || modelProviders.includes(model.provider))
-        .map((model) => ({
+      return (await models.getAvailable()).map((model) => ({
         provider: model.provider,
         id: model.id,
           name: model.name,
         }));
     },
-      async setModel(id, providerId, modelId) {
+    listProviders: () => providers?.list() ?? [],
+    startProviderLogin: (providerId, type) => {
+      if (!providers) throw new Error("Provider configuration is unavailable");
+      return providers.startLogin(providerId, type);
+    },
+    authFlow: (id) => {
+      if (!providers) throw new Error("Provider configuration is unavailable");
+      return providers.flow(id);
+    },
+    answerAuth: (flowId, promptId, value) => providers?.answer(flowId, promptId, value),
+    cancelAuth: (flowId) => providers?.cancel(flowId),
+    logoutProvider: async (providerId) => {
+      if (!providers) throw new Error("Provider configuration is unavailable");
+      await providers.logout(providerId);
+    },
+    async setModel(id, providerId, modelId) {
       if (!models.getModel(providerId, modelId)) throw new Error(`Unknown model: ${providerId}/${modelId}`);
       await (await getConversation(id)).configure({ model: { provider: providerId, modelId } }, context);
     },
@@ -106,20 +128,26 @@ export async function openRuntime({
         return { id, title: text(firstUser) || "New agent", preview: text(messages[0]) };
       }));
     },
-    createConversation: () =>
-      harness.createConversation(
+    createConversation: async () => {
+      const selected = defaultModel ?? (await models.getAvailable())[0];
+      if (!selected) throw new Error("Configure a model provider before creating an agent");
+      return harness.createConversation(
         {
           ownership: { kind: "ownerless" },
           agent: {
-            model: defaultModel,
+            model: "modelId" in selected ? selected : { provider: selected.provider, modelId: selected.id },
             cwd: workspace,
             extensions: [CodingTools, Tengu],
           },
         },
         context,
-      ),
+      );
+    },
     conversation: getConversation,
     watch: (id) => watchEvents(harness, id, context),
-    close: () => harness.close(context),
+    close: async () => {
+      providers?.close();
+      await harness.close(context);
+    },
   };
 }

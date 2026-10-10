@@ -46,7 +46,7 @@ It does not include:
 - repository, branch, or worktree management;
 - per-chat filesystems or sandboxes;
 - approval prompts;
-- a terminal, file browser, Git UI, or settings UI;
+- a terminal, file browser, or Git UI;
 - personal skills, extensions, themes, or prompt templates;
 - notifications, schedules, plugins, or subagent-specific UI;
 - a custom task queue or concurrency scheduler.
@@ -103,11 +103,17 @@ and sanitizer if the plain transcript proves insufficient.
 
 At startup, the process:
 
-1. opens Pi Durable's Node SQLite storage;
-2. creates the model registry and installs the coding extension;
-3. creates a `NodeExecutionEnv` rooted at the shared workspace;
-4. opens the Pi Durable harness and resumes unfinished work;
-5. starts the loopback HTTP listener.
+1. opens Pi's model runtime against the isolated agent directory;
+2. opens Pi Durable's Node SQLite storage;
+3. installs the coding extension;
+4. creates a `NodeExecutionEnv` rooted at the shared workspace;
+5. opens the Pi Durable harness and resumes unfinished work;
+6. starts the loopback HTTP listener.
+
+The server may start without provider credentials. Provider sign-in uses Pi's
+native authentication flows and writes credentials only to the isolated
+`auth.json`; OAuth tokens never pass through the browser. A stable installation
+identifier used by providers such as OpenAI Codex is stored beside it.
 
 Each chat is a Pi Durable conversation. Tengu does not add a separate chat
 model. Every conversation uses the same working directory and can see the same
@@ -149,8 +155,11 @@ Version 1 exposes:
 - `POST /api/agents/:id/input` — submit an input;
 - `POST /api/agents/:id/steer` — steer busy work;
 - `POST /api/agents/:id/stop` — stop the current run;
-- `GET /api/models` — list authenticated models;
-- `PUT /api/agents/:id/model` — change an agent's model.
+- `GET /api/models` — list available authenticated models;
+- `PUT /api/agents/:id/model` — change an agent's model;
+- `GET /api/providers` — list Pi providers and authentication status;
+- `POST /api/providers/:id/login` and `/logout` — manage credentials;
+- `GET`, `POST`, and `DELETE /api/auth/:flow` — continue or cancel an interactive login.
 
 The server performs direct method and payload checks. It should expose only the
 small amount of data the UI consumes, but it should not introduce a generic DTO,
@@ -161,10 +170,11 @@ routes return a plain error. Request bodies have a small fixed limit.
 
 ## Interface
 
-The interface has two views:
+The interface has three views:
 
 - a conversation list with a new-chat action;
-- the selected conversation with messages, tool calls, status, and composer.
+- the selected conversation with messages, tool calls, status, and composer;
+- settings for provider authentication and model discovery.
 
 Desktop shows the list beside the conversation. Mobile shows it as a drawer.
 Tool calls appear as compact command and output blocks. The composer sends a new input,
@@ -192,9 +202,10 @@ Runtime data is intentionally small:
 └── home/
 ```
 
-The service user's isolated home contains provider and Git authentication but
-no inherited interactive Pi configuration. Secrets come from a protected file
-outside the Nix store.
+The service user's isolated home contains provider authentication and a stable
+provider device identifier, but no inherited interactive Pi configuration.
+Credentials can be provisioned from a protected file outside the Nix store or
+created through the settings UI.
 
 Application configuration is limited to values required to start:
 

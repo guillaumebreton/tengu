@@ -77,6 +77,48 @@ export function createHttpServer(runtime: Runtime, publicDirectory?: string) {
         return;
       }
 
+      if (request.method === "GET" && url.pathname === "/api/providers") {
+        json(response, 200, runtime.listProviders());
+        return;
+      }
+
+      const providerLogin = url.pathname.match(/^\/api\/providers\/([^/]+)\/login$/);
+      if (request.method === "POST" && providerLogin) {
+        const body = await readJson(request) as { type?: unknown };
+        if (body.type !== "oauth" && body.type !== "api_key") {
+          json(response, 400, { error: "type must be oauth or api_key" });
+          return;
+        }
+        json(response, 202, { flowId: runtime.startProviderLogin(decodeURIComponent(providerLogin[1]), body.type) });
+        return;
+      }
+
+      const providerLogout = url.pathname.match(/^\/api\/providers\/([^/]+)\/logout$/);
+      if (request.method === "POST" && providerLogout) {
+        await runtime.logoutProvider(decodeURIComponent(providerLogout[1]));
+        response.writeHead(204).end();
+        return;
+      }
+
+      const authFlow = url.pathname.match(/^\/api\/auth\/([^/]+)$/);
+      if (request.method === "GET" && authFlow) {
+        json(response, 200, runtime.authFlow(authFlow[1]));
+        return;
+      }
+      if (request.method === "DELETE" && authFlow) {
+        runtime.cancelAuth(authFlow[1]);
+        response.writeHead(204).end();
+        return;
+      }
+
+      const authPrompt = url.pathname.match(/^\/api\/auth\/([^/]+)\/([^/]+)$/);
+      if (request.method === "POST" && authPrompt) {
+        const body = await readJson(request) as { value?: unknown; cancel?: unknown };
+        runtime.answerAuth(authPrompt[1], authPrompt[2], body.cancel === true ? undefined : String(body.value ?? ""));
+        response.writeHead(204).end();
+        return;
+      }
+
       const stopConversationId = parseAgentRoute(url.pathname, "stop");
       if (request.method === "POST" && stopConversationId !== undefined) {
         await (await runtime.conversation(stopConversationId)).abort(BACKGROUND_CONTEXT);

@@ -28,7 +28,7 @@
 * { box-sizing: border-box; }
 html, body, #app { margin: 0; min-width: 320px; min-height: 100%; }
 body { min-height: 100dvh; background: var(--bg); font-size: var(--fs-body); }
-button, textarea, select { font: inherit; color: inherit; }
+button, textarea, select, input { font: inherit; color: inherit; }
 button { cursor: pointer; }
 
 .shell { display: grid; grid-template-columns: 15rem minmax(0, 1fr); height: 100dvh; overflow: hidden; background: var(--bg); }
@@ -56,7 +56,9 @@ button { cursor: pointer; }
 .conversation[data-active="true"] strong { color: var(--ink); }
 .conversation small { margin-top: .25rem; color: var(--faint); font-size: var(--fs-tiny); }
 .conversation time { flex: 0 0 auto; color: var(--faint); font-size: .5625rem; }
-.sidebar-footer { display: flex; align-items: center; gap: .5rem; padding: .75rem 1rem; border-top: 1px solid var(--border); color: var(--faint); font-size: var(--fs-tiny); }
+.sidebar-footer { display: flex; align-items: center; justify-content: space-between; gap: .5rem; padding: .75rem 1rem; border-top: 1px solid var(--border); color: var(--faint); font-size: var(--fs-tiny); }
+.sidebar-footer button { border: 0; background: transparent; color: var(--muted); font-size: var(--fs-tiny); }
+.sidebar-footer button:hover { color: var(--ink); }
 .connection-state { display: flex; align-items: center; gap: .5rem; }
 .connection-state i, .run-state i, .running i, .done i { display: inline-block; width: 5px; height: 5px; background: var(--green); }
 .connection-state[data-state="disconnected"] { color: var(--red); }
@@ -69,6 +71,31 @@ button { cursor: pointer; }
 .empty-state p { margin: 0; }
 .empty-state button { padding: .35rem .55rem; border: 1px solid var(--border-strong); background: transparent; color: var(--accent); font-size: var(--fs-tiny); }
 .empty-state button:hover { background: var(--raised); color: var(--ink); }
+.settings { grid-row: 1 / -1; min-height: 0; padding: 0 var(--content-inset) 2rem; overflow-y: auto; }
+.settings > header { min-height: 3.25rem; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border); }
+.settings h1, .settings h2 { margin: 0; color: var(--ink); font-size: var(--fs-title); font-weight: 500; }
+.settings > header button, .provider-actions button, .auth-flow button { padding: .3rem .45rem; border: 1px solid var(--border); background: transparent; color: var(--muted); font-size: var(--fs-tiny); }
+.settings button:hover { border-color: var(--border-strong); color: var(--ink); }
+.settings-copy { margin: 1.5rem 0 .75rem; color: var(--muted); }
+.settings-search, .auth-flow input { width: 100%; padding: .55rem .65rem; border: 1px solid var(--border); outline: 0; background: var(--panel); }
+.settings-search:focus, .auth-flow input:focus { border-color: var(--accent); }
+.provider-list { margin-top: .75rem; border-top: 1px solid var(--border); }
+.provider { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: .8rem 0; border-bottom: 1px solid var(--border); }
+.provider strong, .provider small, .auth-options small, .auth-flow label { display: block; }
+.provider strong { color: var(--body); font-weight: 500; }
+.provider small, .auth-options small, .auth-flow small, .muted { margin-top: .25rem; color: var(--faint); font-size: var(--fs-tiny); }
+.provider-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: .35rem; }
+.auth-flow { max-width: 42rem; padding-top: 1.5rem; }
+.auth-flow h2 { margin-bottom: 1rem; }
+.auth-flow a { color: var(--accent); }
+.auth-flow p { line-height: 1.6; }
+.auth-flow p small { display: block; }
+.auth-flow form { display: flex; align-items: end; gap: .5rem; margin-top: 1rem; }
+.auth-flow form label { flex: 1; color: var(--muted); }
+.auth-flow input { margin-top: .4rem; }
+.auth-options { display: grid; gap: .4rem; margin-top: 1rem; }
+.auth-options button { text-align: left; }
+.success { color: var(--green); }
 .chat-header { gap: .875rem; padding: 0 var(--content-inset); }
 .chat-header h1 { min-width: 0; margin: 0; overflow: hidden; color: var(--ink); text-overflow: ellipsis; white-space: nowrap; font-size: var(--fs-title); font-weight: 500; }
 .menu-button { display: none; padding: .35rem; }

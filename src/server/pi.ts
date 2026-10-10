@@ -1,7 +1,16 @@
+import { randomUUID } from "node:crypto";
+import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { ModelRuntime } from "@earendil-works/pi-coding-agent";
 
 export async function loadPi(agentDirectory: string) {
+  await mkdir(agentDirectory, { recursive: true });
+  const devicePath = join(agentDirectory, "device-id");
+  const deviceId = await readFile(devicePath, "utf8").then((value) => value.trim()).catch(async () => {
+    const value = randomUUID();
+    await writeFile(devicePath, `${value}\n`, { mode: 0o600 });
+    return value;
+  });
   const models = await ModelRuntime.create({
     authPath: join(agentDirectory, "auth.json"),
     modelsPath: join(agentDirectory, "models.json"),
@@ -10,20 +19,12 @@ export async function loadPi(agentDirectory: string) {
     refreshOnCreate: true,
   });
   const available = await models.getAvailable();
-  if (available.length === 0) {
-    throw new Error(`No authenticated Pi models found in ${agentDirectory}`);
-  }
-  const providers = [...new Set((await models.listCredentials()).map((credential) => credential.providerId))];
-  const configured = available.filter((model) => providers.includes(model.provider));
-  if (configured.length === 0) {
-    throw new Error(`Pi credentials in ${agentDirectory} do not provide any models`);
-  }
-  const preferred = configured.find((model) => model.provider === "openai-codex" && model.id === "gpt-5.6-terra")
-    ?? configured.find((model) => model.provider === "openai-codex")
-    ?? configured[0];
+  const preferred = available.find((model) => model.provider === "openai-codex" && model.id === "gpt-5.6-terra")
+    ?? available.find((model) => model.provider === "openai-codex")
+    ?? available[0];
   return {
     models,
-    modelProviders: providers,
-    defaultModel: { provider: preferred.provider, modelId: preferred.id },
+    providerModels: { models, deviceId },
+    ...(preferred ? { defaultModel: { provider: preferred.provider, modelId: preferred.id } } : {}),
   };
 }

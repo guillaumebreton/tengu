@@ -4,9 +4,9 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { BACKGROUND_CONTEXT } from "@earendil-works/chord/context";
 import { fauxAssistantMessage, fauxProvider } from "@earendil-works/pi-ai/providers/faux";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { createHttpServer } from "./http";
-import { openRuntime } from "./runtime";
+import { openRuntime, type Runtime } from "./runtime";
 import { fauxModels } from "./test-runtime";
 
 const cleanups: Array<() => Promise<void>> = [];
@@ -138,6 +138,25 @@ describe("HTTP API", () => {
     });
     expect(response.status).toBe(204);
     expect((await conversation.agent(BACKGROUND_CONTEXT)).model).toEqual({ provider: "faux", modelId: "faux-1" });
+  });
+
+  it("exposes provider configuration and authentication flows", async () => {
+    const runtime = {
+      listProviders: () => [{ id: "openai-codex", name: "OpenAI Codex", configured: false, source: null, label: null, apiKey: false, oauth: "Sign in with ChatGPT", models: 4 }],
+      startProviderLogin: () => "flow-1",
+      authFlow: () => ({ id: "flow-1", providerId: "openai-codex", events: [], prompt: { id: "prompt-1", type: "manual_code", message: "Paste redirect URL" }, done: null }),
+      answerAuth: vi.fn(), cancelAuth: vi.fn(), logoutProvider: vi.fn(),
+    } as unknown as Runtime;
+    const server = createHttpServer(runtime);
+    await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", resolve));
+    const address = server.address();
+    if (!address || typeof address === "string") throw new Error("Server did not bind");
+    const base = `http://127.0.0.1:${address.port}`;
+    cleanups.push(() => new Promise<void>((resolve, reject) => server.close((error) => error ? reject(error) : resolve())));
+
+    expect(await (await fetch(`${base}/api/providers`)).json()).toEqual([expect.objectContaining({ id: "openai-codex", oauth: "Sign in with ChatGPT" })]);
+    expect(await (await fetch(`${base}/api/providers/openai-codex/login`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ type: "oauth" }) })).json()).toEqual({ flowId: "flow-1" });
+    expect(await (await fetch(`${base}/api/auth/flow-1`)).json()).toEqual(expect.objectContaining({ prompt: expect.objectContaining({ type: "manual_code" }) }));
   });
 
   it("streams a snapshot and committed agent events", async () => {

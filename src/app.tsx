@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useReducer, useRef, useState } from "preact/hooks";
-import { connectToAgent, createAgent, listAgents, listModels, setAgentModel, stopAgent, submitInput, type Agent, type Model } from "./client";
-import { Composer, EmptyState, SessionHeader, Sidebar, Transcript } from "./components";
+import { answerAuth, cancelAuth, connectToAgent, createAgent, getAuthFlow, listAgents, listModels, listProviders, logoutProvider, setAgentModel, startProviderLogin, stopAgent, submitInput, type Agent, type AuthFlow, type Model, type Provider } from "./client";
+import { Composer, EmptyState, SessionHeader, Settings, Sidebar, Transcript } from "./components";
 import { initialLiveState, reduceAgentEvent } from "./live";
 import { useGlobalShortcuts } from "./shortcuts";
 
@@ -15,6 +15,9 @@ export function App() {
   const [draft, setDraft] = useState("");
   const [models, setModels] = useState<Model[]>([]);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [providers, setProviders] = useState<Provider[]>([]);
+  const [authFlow, setAuthFlow] = useState<AuthFlow | null>(null);
   const [connection, setConnection] = useState<"connected" | "disconnected">("disconnected");
   const [error, setError] = useState("");
   const [highlightedId, setHighlightedId] = useState<number>();
@@ -29,6 +32,19 @@ export function App() {
       })
       .catch(() => setError("Could not load Tengu"));
   }, []);
+
+  useEffect(() => {
+    if (!authFlow || authFlow.done) return;
+    const timer = setInterval(() => void getAuthFlow(authFlow.id).then((next) => {
+      setAuthFlow(next);
+      if (next.done?.ok) void Promise.all([listProviders(), listModels()]).then(([nextProviders, nextModels]) => {
+        setProviders(nextProviders);
+        setModels(nextModels);
+        setAuthFlow(null);
+      });
+    }).catch(() => setError("Could not continue sign in")), 500);
+    return () => clearInterval(timer);
+  }, [authFlow?.id, authFlow?.done]);
 
   useEffect(() => {
     if (selectedId === undefined) return;
@@ -120,6 +136,11 @@ export function App() {
         open={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
         onCreate={() => void addAgent()}
+        onSettings={() => {
+          setSettingsOpen(true);
+          setSidebarOpen(false);
+          void listProviders().then(setProviders).catch(() => setError("Could not load providers"));
+        }}
         onSelect={(id) => {
           setSelectedId(id);
           setHighlightedId(undefined);
@@ -127,12 +148,40 @@ export function App() {
         connection={connection}
       />
       <main class="chat">
-        {selectedId === undefined ? (
-          <EmptyState onCreate={() => void addAgent()} error={error} />
+        {settingsOpen ? <Settings
+          providers={providers}
+          flow={authFlow}
+          onClose={() => {
+            if (authFlow && !authFlow.done) void cancelAuth(authFlow.id);
+            setAuthFlow(null);
+            setSettingsOpen(false);
+          }}
+          onLogin={(providerId, type) => void startProviderLogin(providerId, type)
+            .then((id) => getAuthFlow(id))
+            .then(setAuthFlow)
+            .catch((cause) => setError(errorMessage(cause, "Could not start sign in")))}
+          onLogout={(providerId) => void logoutProvider(providerId)
+            .then(() => Promise.all([listProviders(), listModels()]))
+            .then(([nextProviders, nextModels]) => { setProviders(nextProviders); setModels(nextModels); })
+            .catch((cause) => setError(errorMessage(cause, "Could not sign out")))}
+          onAnswer={(flowId, promptId, value) => void answerAuth(flowId, promptId, value)
+            .then(() => getAuthFlow(flowId))
+            .then(setAuthFlow)
+            .catch((cause) => setError(errorMessage(cause, "Could not continue sign in")))}
+        /> : selectedId === undefined ? (
+          <EmptyState
+            onCreate={() => void addAgent()}
+            onSettings={() => {
+              setSettingsOpen(true);
+              void listProviders().then(setProviders).catch(() => setError("Could not load providers"));
+            }}
+            configured={models.length > 0}
+            error={error}
+          />
         ) : <>
         <SessionHeader
           title={selected?.title ?? "New agent"}
-          models={models.map((model) => ({ id: `${model.provider}/${model.id}`, label: model.name }))}
+          models={models.map((model) => ({ id: `${model.provider}/${model.id}`, label: `${model.provider} · ${model.name}` }))}
           model={live.model}
           onModelChange={(id) => void changeModel(id)}
           onOpenAgents={() => {

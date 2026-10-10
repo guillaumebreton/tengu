@@ -1,5 +1,6 @@
 import type { ComponentChildren, Ref } from "preact";
-import { useEffect, useRef } from "preact/hooks";
+import { useEffect, useRef, useState } from "preact/hooks";
+import type { AuthFlow, Provider } from "./client";
 import type { LiveTool, TranscriptItem } from "./live";
 
 export type AgentSummary = {
@@ -30,6 +31,7 @@ export function Sidebar({
   onClose,
   onCreate,
   onSelect,
+  onSettings,
   connection,
 }: {
   agents: AgentSummary[];
@@ -38,6 +40,7 @@ export function Sidebar({
   onClose: () => void;
   onCreate: () => void;
   onSelect: (id: number) => void;
+  onSettings: () => void;
   connection: "connected" | "disconnected";
 }) {
   return (
@@ -62,7 +65,10 @@ export function Sidebar({
             ))}
           </div>
         </nav>
-        <footer class="sidebar-footer"><ConnectionStatus state={connection} /></footer>
+        <footer class="sidebar-footer">
+          <ConnectionStatus state={connection} />
+          <button onClick={onSettings}>settings</button>
+        </footer>
       </aside>
     </>
   );
@@ -94,6 +100,7 @@ export function SessionHeader({
       <label class="model-picker">
         <span>model</span>
         <select aria-label="Model" value={model} onChange={(event) => onModelChange(event.currentTarget.value)}>
+          {models.length === 0 && <option value="">configure provider</option>}
           {models.map((candidate) => <option value={candidate.id} key={candidate.id}>{candidate.label}</option>)}
         </select>
       </label>
@@ -103,11 +110,71 @@ export function SessionHeader({
   );
 }
 
-export function EmptyState({ onCreate, error }: { onCreate: () => void; error?: string }) {
+export function Settings({
+  providers,
+  flow,
+  onClose,
+  onLogin,
+  onLogout,
+  onAnswer,
+}: {
+  providers: Provider[];
+  flow: AuthFlow | null;
+  onClose: () => void;
+  onLogin: (providerId: string, type: "oauth" | "api_key") => void;
+  onLogout: (providerId: string) => void;
+  onAnswer: (flowId: string, promptId: string, value?: string) => void;
+}) {
+  const [query, setQuery] = useState("");
+  const [value, setValue] = useState("");
+  const shown = providers
+    .filter((provider) => `${provider.name} ${provider.id}`.toLowerCase().includes(query.toLowerCase()))
+    .sort((a, b) => Number(b.configured) - Number(a.configured) || a.name.localeCompare(b.name));
+  const answer = (promptId: string, answerValue?: string) => {
+    if (!flow) return;
+    onAnswer(flow.id, promptId, answerValue);
+    setValue("");
+  };
+  return <section class="settings" aria-label="Settings">
+    <header><h1>settings</h1><button aria-label="Close settings" onClick={onClose}>close</button></header>
+    {flow ? <div class="auth-flow">
+      <h2>{providers.find((provider) => provider.id === flow.providerId)?.name ?? flow.providerId}</h2>
+      {flow.events.map((event, index) => event.type === "auth_url"
+        ? <p key={index}><a href={event.url} target="_blank" rel="noopener">open sign-in page</a><small>{event.instructions}</small></p>
+        : event.type === "device_code"
+          ? <p key={index}>Enter <strong>{event.userCode}</strong> at <a href={event.verificationUri} target="_blank" rel="noopener">{event.verificationUri}</a></p>
+          : <p key={index}>{event.message}</p>)}
+      {flow.prompt?.type === "select" ? <div class="auth-options">
+        <p>{flow.prompt.message}</p>
+        {flow.prompt.options.map((option) => <button onClick={() => answer(flow.prompt!.id, option.id)} key={option.id}>{option.label}<small>{option.description}</small></button>)}
+      </div> : flow.prompt && <form onSubmit={(event) => { event.preventDefault(); answer(flow.prompt!.id, value); }}>
+        <label>{flow.prompt.message}<input type={flow.prompt.type === "secret" ? "password" : "text"} value={value} placeholder={flow.prompt.placeholder} onInput={(event) => setValue(event.currentTarget.value)} /></label>
+        <button type="submit">continue</button>
+      </form>}
+      {!flow.prompt && !flow.done && <p class="muted">waiting for provider…</p>}
+      {flow.done?.ok && <p class="success">signed in</p>}
+      {flow.done && !flow.done.ok && <p class="request-error" role="alert">{flow.done.error}</p>}
+    </div> : <>
+      <p class="settings-copy">Provider credentials are stored in Tengu's isolated Pi configuration.</p>
+      <input class="settings-search" aria-label="Search providers" placeholder="search providers" value={query} onInput={(event) => setQuery(event.currentTarget.value)} />
+      <div class="provider-list">{shown.map((provider) => <article class="provider" key={provider.id}>
+        <div><strong>{provider.name}</strong><small>{provider.configured ? `configured${provider.label ? ` · ${provider.label}` : ""}` : "not configured"} · {provider.models} models</small></div>
+        <div class="provider-actions">
+          {provider.oauth && <button onClick={() => onLogin(provider.id, "oauth")}>{provider.oauth}</button>}
+          {provider.apiKey && <button onClick={() => onLogin(provider.id, "api_key")}>API key</button>}
+          {provider.configured && provider.source === "stored" && <button onClick={() => onLogout(provider.id)}>sign out</button>}
+        </div>
+      </article>)}</div>
+    </>}
+  </section>;
+}
+
+export function EmptyState({ onCreate, onSettings, configured, error }: { onCreate: () => void; onSettings: () => void; configured: boolean; error?: string }) {
   return (
     <section class="empty-state">
-      {error ? <p class="request-error" role="alert">{error}</p> : <p>No agents yet.</p>}
-      <button onClick={onCreate}>Create agent</button>
+      <p>No agents yet.</p>
+      {error && <p class="request-error" role="alert">{error}</p>}
+      {configured ? <button onClick={onCreate}>Create agent</button> : <button onClick={onSettings}>Configure provider</button>}
     </section>
   );
 }
