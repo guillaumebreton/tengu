@@ -1,6 +1,7 @@
 import type { AgentEvent } from "@earendil-works/pi-durable";
 
 export type Model = { provider: string; id: string; name: string };
+export type Skill = { name: string; description: string };
 export type Provider = { id: string; name: string; configured: boolean; source: string | null; label: string | null; apiKey: boolean; oauth: string | null; models: number };
 export type AuthPrompt = { id: string; type: "text" | "secret" | "manual_code"; message: string; placeholder?: string }
   | { id: string; type: "select"; message: string; options: readonly { id: string; label: string; description?: string }[] };
@@ -18,6 +19,12 @@ export type Agent = {
 export async function listAgents(): Promise<Agent[]> {
   const response = await fetch("/api/agents");
   if (!response.ok) throw new Error("Could not load agents");
+  return response.json();
+}
+
+export async function listSkills(): Promise<Skill[]> {
+  const response = await fetch("/api/skills");
+  if (!response.ok) throw new Error("Could not load skills");
   return response.json();
 }
 

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useReducer, useRef, useState } from "preact/hooks";
-import { answerAuth, cancelAuth, connectToAgent, createAgent, getAuthFlow, listAgents, listModels, listProviders, logoutProvider, renameAgent, setAgentModel, startProviderLogin, stopAgent, submitInput, type Agent, type AuthFlow, type Model, type Provider } from "./client";
+import { answerAuth, cancelAuth, connectToAgent, createAgent, getAuthFlow, listAgents, listModels, listProviders, listSkills, logoutProvider, renameAgent, setAgentModel, startProviderLogin, stopAgent, submitInput, type Agent, type AuthFlow, type Model, type Provider, type Skill } from "./client";
 import { Composer, EmptyState, SessionHeader, Settings, Sidebar, Transcript } from "./components";
 import { initialLiveState, reduceAgentEvent } from "./live";
 import { useGlobalShortcuts } from "./shortcuts";
@@ -14,6 +14,7 @@ export function App() {
   const [live, dispatch] = useReducer(reduceAgentEvent, initialLiveState);
   const [draft, setDraft] = useState("");
   const [models, setModels] = useState<Model[]>([]);
+  const [skills, setSkills] = useState<Skill[]>([]);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [providers, setProviders] = useState<Provider[]>([]);
@@ -22,12 +23,14 @@ export function App() {
   const [error, setError] = useState("");
   const [highlightedId, setHighlightedId] = useState<number>();
   const composerRef = useRef<HTMLTextAreaElement>(null);
+  const modelRef = useRef<HTMLSelectElement>(null);
 
   useEffect(() => {
-    void Promise.all([listAgents(), listModels()])
-      .then(([loadedAgents, loadedModels]) => {
+    void Promise.all([listAgents(), listModels(), listSkills()])
+      .then(([loadedAgents, loadedModels, loadedSkills]) => {
         setAgents(loadedAgents);
         setModels(loadedModels);
+        setSkills(loadedSkills);
         setSelectedId(loadedAgents[0]?.id);
       })
       .catch(() => setError("Could not load Tengu"));
@@ -217,6 +220,17 @@ export function App() {
           models={models.map((model) => ({ id: `${model.provider}/${model.id}`, label: `${model.provider} · ${model.name}` }))}
           model={live.model}
           onModelChange={(id) => void changeModel(id)}
+          modelRef={modelRef}
+          commands={[
+            { name: "models", description: "Choose a model", action: () => { setDraft(""); queueMicrotask(() => modelRef.current?.focus()); } },
+            { name: "skills", description: "List available skills", action: () => setDraft("/skill:") },
+            { name: "new", description: "Create an agent", action: () => { setDraft(""); void addAgent(); } },
+            { name: "agents", description: "Open agents", action: () => { setDraft(""); setHighlightedId(selectedId); setSidebarOpen(true); } },
+            { name: "stop", description: "Stop the active run", action: () => { setDraft(""); void stop(); } },
+            { name: "settings", description: "Open settings", action: () => { setDraft(""); setSettingsOpen(true); void listProviders().then(setProviders); } },
+            { name: "rename", description: "Rename this agent", action: () => setDraft("/rename ") },
+            ...skills.map((skill) => ({ name: `skill:${skill.name}`, description: skill.description, action: () => setDraft(`/skill:${skill.name} `) })),
+          ]}
         />
         </>}
       </main>

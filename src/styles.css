@@ -152,7 +152,13 @@ button { cursor: pointer; }
 .diff-line.hunk { color: var(--accent); }
 .diff-line.file { color: var(--faint); }
 
-.composer-wrap { padding: 0 var(--content-inset) 1.25rem; background: var(--bg); }
+.composer-wrap { position: relative; padding: 0 var(--content-inset) 1.25rem; background: var(--bg); }
+.command-menu { position: absolute; right: var(--content-inset); bottom: calc(100% - .65rem); left: var(--content-inset); display: grid; max-height: 16rem; overflow-y: auto; border: 1px solid var(--border-strong); background: var(--panel); box-shadow: 0 -.75rem 2rem rgb(0 0 0 / 20%); z-index: 2; }
+.command-menu button { display: flex; gap: 1rem; padding: .55rem .7rem; border: 0; border-bottom: 1px solid var(--border); background: transparent; text-align: left; }
+.command-menu button:last-child { border-bottom: 0; }
+.command-menu button[aria-selected="true"], .command-menu button:hover { background: var(--raised); }
+.command-menu strong { width: 9rem; flex: 0 0 auto; color: var(--accent); font-weight: 500; }
+.command-menu span { color: var(--muted); }
 .request-error { margin: 0 0 .5rem; color: var(--red); font-size: var(--fs-tiny); }
 .composer { border: 1px solid var(--border-strong); background: var(--panel); }
 .composer:focus-within { border-color: var(--accent); }

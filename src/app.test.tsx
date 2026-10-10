@@ -44,7 +44,8 @@ describe("App", () => {
     vi.stubGlobal("EventSource", TestEventSource);
     vi.stubGlobal("fetch", vi.fn()
       .mockResolvedValueOnce(new Response(JSON.stringify([])))
-      .mockResolvedValueOnce(new Response(JSON.stringify([{ provider: "openai-codex", id: "gpt-5.6-terra", name: "GPT-5.6 Terra" }]))));
+      .mockResolvedValueOnce(new Response(JSON.stringify([{ provider: "openai-codex", id: "gpt-5.6-terra", name: "GPT-5.6 Terra" }])))
+      .mockResolvedValueOnce(new Response(JSON.stringify([]))));
 
     render(<App />);
 
@@ -54,6 +55,7 @@ describe("App", () => {
 
   it("opens provider settings and offers Codex OAuth", async () => {
     vi.stubGlobal("fetch", vi.fn()
+      .mockResolvedValueOnce(new Response(JSON.stringify([])))
       .mockResolvedValueOnce(new Response(JSON.stringify([])))
       .mockResolvedValueOnce(new Response(JSON.stringify([])))
       .mockResolvedValueOnce(new Response(JSON.stringify([{ id: "openai-codex", name: "OpenAI Codex", configured: false, source: null, label: null, apiKey: false, oauth: "Sign in with ChatGPT", models: 4 }]))));
@@ -75,7 +77,9 @@ describe("App", () => {
         { id: 1, title: "First agent", preview: "" },
       ])))
       .mockResolvedValueOnce(new Response(JSON.stringify([{ provider: "openai", id: "gpt-5.4", name: "gpt-5.4" }])))
+      .mockResolvedValueOnce(new Response(JSON.stringify([])))
       .mockResolvedValueOnce(new Response(JSON.stringify({ id: 3 }), { status: 201 }));
+    fetchMock.mockResolvedValue(new Response(JSON.stringify([])));
     vi.stubGlobal("fetch", fetchMock);
 
     render(<App />);
@@ -105,9 +109,11 @@ describe("App", () => {
     const fetchMock = vi.fn()
       .mockResolvedValueOnce(new Response(JSON.stringify([{ id: 1, title: "Fix the flaky login test", preview: "" }])))
       .mockResolvedValueOnce(new Response(JSON.stringify([{ provider: "openai", id: "gpt-5.4", name: "gpt-5.4" }])))
+      .mockResolvedValueOnce(new Response(JSON.stringify([])))
       .mockResolvedValueOnce(new Response(null, { status: 204 }))
       .mockResolvedValueOnce(new Response(JSON.stringify({ status: "placed" }), { status: 202 }))
       .mockResolvedValueOnce(new Response(null, { status: 204 }));
+    fetchMock.mockResolvedValue(new Response(JSON.stringify([])));
     vi.stubGlobal("fetch", fetchMock);
 
     render(<App />);
@@ -141,7 +147,9 @@ describe("App", () => {
     const fetchMock = vi.fn()
       .mockResolvedValueOnce(new Response(JSON.stringify([{ id: 1, title: "Agent", preview: "" }])))
       .mockResolvedValueOnce(new Response(JSON.stringify([{ provider: "openai", id: "gpt-5.4", name: "gpt-5.4" }])))
+      .mockResolvedValueOnce(new Response(JSON.stringify([])))
       .mockResolvedValueOnce(new Response(null, { status: 204 }));
+    fetchMock.mockResolvedValue(new Response(JSON.stringify([])));
     vi.stubGlobal("fetch", fetchMock);
 
     render(<App />);
@@ -159,7 +167,8 @@ describe("App", () => {
     vi.stubGlobal("EventSource", TestEventSource);
     vi.stubGlobal("fetch", vi.fn()
       .mockResolvedValueOnce(new Response(JSON.stringify([{ id: 1, title: "Agent", preview: "" }])))
-      .mockResolvedValueOnce(new Response(JSON.stringify([{ provider: "openai", id: "gpt-5.4", name: "gpt-5.4" }]))));
+      .mockResolvedValueOnce(new Response(JSON.stringify([{ provider: "openai", id: "gpt-5.4", name: "gpt-5.4" }])))
+      .mockResolvedValueOnce(new Response(JSON.stringify([]))));
 
     render(<App />);
     const composer = await screen.findByRole("textbox", { name: "Message Tengu" });
@@ -175,8 +184,10 @@ describe("App", () => {
     const fetchMock = vi.fn()
       .mockResolvedValueOnce(new Response(JSON.stringify([{ id: 1, title: "Agent", preview: "" }])))
       .mockResolvedValueOnce(new Response(JSON.stringify([{ provider: "openai", id: "gpt-5.4", name: "gpt-5.4" }])))
+      .mockResolvedValueOnce(new Response(JSON.stringify([])))
       .mockResolvedValueOnce(new Response(null, { status: 500 }))
       .mockResolvedValueOnce(new Response(null, { status: 500 }));
+    fetchMock.mockResolvedValue(new Response(JSON.stringify([])));
     vi.stubGlobal("fetch", fetchMock);
 
     render(<App />);

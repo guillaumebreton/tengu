@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
-import { ModelRuntime } from "@earendil-works/pi-coding-agent";
+import { loadSkills, ModelRuntime } from "@earendil-works/pi-coding-agent";
 
 export async function loadPi(agentDirectory: string) {
   await mkdir(agentDirectory, { recursive: true });
@@ -18,12 +18,14 @@ export async function loadPi(agentDirectory: string) {
     allowModelNetwork: true,
     refreshOnCreate: true,
   });
+  const skills = loadSkills({ cwd: process.env.TENGU_WORKSPACE ?? process.cwd(), agentDir: agentDirectory, skillPaths: [], includeDefaults: true }).skills;
   const available = await models.getAvailable();
   const preferred = available.find((model) => model.provider === "openai-codex" && model.id === "gpt-5.6-terra")
     ?? available.find((model) => model.provider === "openai-codex")
     ?? available[0];
   return {
     models,
+    skills,
     providerModels: { models, deviceId },
     storedProviderIds: async () => (await models.listCredentials()).map((credential) => credential.providerId),
     ...(preferred ? { defaultModel: { provider: preferred.provider, modelId: preferred.id } } : {}),

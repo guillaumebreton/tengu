@@ -1,5 +1,5 @@
 // @vitest-environment node
-import { mkdtemp, readFile, rm } from "node:fs/promises";
+import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { BACKGROUND_CONTEXT } from "@earendil-works/chord/context";
@@ -29,6 +29,21 @@ describe("runtime", () => {
 
     expect(await runtime.listModels()).toEqual([]);
     await expect(runtime.createConversation()).rejects.toThrow("Configure a model provider");
+    await runtime.close();
+  });
+
+  it("discovers and expands configured skills", async () => {
+    const directory = await mkdtemp(join(tmpdir(), "tengu-skills-"));
+    directories.push(directory);
+    const skillPath = join(directory, "SKILL.md");
+    await writeFile(skillPath, "---\nname: review\ndescription: Review code\n---\n\nReview carefully.\n");
+    const runtime = await openRuntime({
+      database: join(directory, "tengu.sqlite"), workspace: join(directory, "workspace"),
+      ...fauxModels(fauxProvider()), skills: [{ name: "review", description: "Review code", filePath: skillPath }],
+    });
+
+    expect(runtime.listSkills()).toEqual([{ name: "review", description: "Review code" }]);
+    expect(await runtime.expandSkill("review", "src/app.tsx")).toContain("Review carefully.\n</skill>\n\nsrc/app.tsx");
     await runtime.close();
   });
 

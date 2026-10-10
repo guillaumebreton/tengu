@@ -10,6 +10,12 @@ export type AgentSummary = {
   preview: string;
 };
 
+export type ComposerCommand = {
+  name: string;
+  description: string;
+  action: () => void;
+};
+
 export type ModelOption = {
   id: string;
   label: string;
@@ -262,6 +268,8 @@ export function Composer({
   models,
   model,
   onModelChange,
+  commands = [],
+  modelRef,
 }: {
   value: string;
   onInput: (value: string) => void;
@@ -272,10 +280,26 @@ export function Composer({
   models: ModelOption[];
   model: string;
   onModelChange: (model: string) => void;
+  commands?: ComposerCommand[];
+  modelRef?: Ref<HTMLSelectElement>;
 }) {
+  const [selectedCommand, setSelectedCommand] = useState(0);
+  const query = value.startsWith("/") && !value.includes(" ") ? value.slice(1).toLowerCase() : undefined;
+  const shownCommands = query === undefined ? [] : commands.filter((command) => command.name.startsWith(query));
+  useEffect(() => setSelectedCommand(0), [query]);
   return (
     <div class="composer-wrap">
       {error && <p class="request-error" role="alert">{error}</p>}
+      {shownCommands.length > 0 && <div class="command-menu" role="listbox" aria-label="Commands">
+        {shownCommands.map((command, index) => <button
+          type="button"
+          role="option"
+          aria-selected={index === selectedCommand}
+          onMouseDown={(event) => event.preventDefault()}
+          onClick={command.action}
+          key={command.name}
+        ><strong>/{command.name}</strong><span>{command.description}</span></button>)}
+      </div>}
       <form class="composer" onSubmit={onSubmit}>
         <textarea
           ref={inputRef}
@@ -289,6 +313,16 @@ export function Composer({
           value={value}
           onInput={(event) => onInput(event.currentTarget.value)}
           onKeyDown={(event) => {
+            if (shownCommands.length > 0 && (event.key === "ArrowDown" || event.key === "ArrowUp")) {
+              event.preventDefault();
+              setSelectedCommand((current) => (current + (event.key === "ArrowDown" ? 1 : -1) + shownCommands.length) % shownCommands.length);
+              return;
+            }
+            if (shownCommands.length > 0 && event.key === "Enter" && !event.shiftKey) {
+              event.preventDefault();
+              shownCommands[selectedCommand].action();
+              return;
+            }
             if (event.key === "Enter" && !event.shiftKey) {
               event.preventDefault();
               event.currentTarget.form?.requestSubmit();
@@ -298,7 +332,7 @@ export function Composer({
         <div class="composer-actions">
           <label class="model-picker">
             <span>model</span>
-            <select aria-label="Model" value={model} onChange={(event) => onModelChange(event.currentTarget.value)}>
+            <select ref={modelRef} aria-label="Model" value={model} onChange={(event) => onModelChange(event.currentTarget.value)}>
               {models.length === 0 && <option value="">configure provider</option>}
               {models.map((candidate) => <option value={candidate.id} key={candidate.id}>{candidate.label}</option>)}
             </select>

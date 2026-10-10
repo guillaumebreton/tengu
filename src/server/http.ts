@@ -72,6 +72,11 @@ export function createHttpServer(runtime: Runtime, publicDirectory?: string) {
         return;
       }
 
+      if (request.method === "GET" && url.pathname === "/api/skills") {
+        json(response, 200, runtime.listSkills());
+        return;
+      }
+
       if (request.method === "GET" && url.pathname === "/api/models") {
         json(response, 200, await runtime.listModels());
         return;
@@ -181,11 +186,13 @@ export function createHttpServer(runtime: Runtime, publicDirectory?: string) {
           json(response, 400, { error: "content and requestId are required" });
           return;
         }
+        const skill = body.content.trim().match(/^\/skill:([a-z0-9-]+)(?:\s+([\s\S]*))?$/);
+        const content = skill ? await runtime.expandSkill(skill[1], skill[2]?.trim() ?? "") : body.content.trim();
         const conversation = await runtime.conversation(conversationId);
         const submission = await conversation.submit(
           {
             type: "input",
-            content: body.content.trim(),
+            content,
             requestId: body.requestId,
             ...(steerConversationId !== undefined ? { whenBusy: "steer" as const } : {}),
           },

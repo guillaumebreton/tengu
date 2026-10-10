@@ -24,6 +24,7 @@ const context = BACKGROUND_CONTEXT;
 
 export type AgentSummary = { id: ConversationId; title: string; preview: string };
 export type ModelSummary = { provider: string; id: string; name: string };
+export type SkillSummary = { name: string; description: string };
 
 const AgentNames = defineDoc<{ items: Record<string, string> }>({
   kind: "tengu.agent-names",
@@ -34,6 +35,8 @@ const AgentNames = defineDoc<{ items: Record<string, string> }>({
 
 export type Runtime = {
   listModels(): Promise<readonly ModelSummary[]>;
+  listSkills(): readonly SkillSummary[];
+  expandSkill(name: string, request: string): Promise<string>;
   listProviders(): readonly ProviderSummary[];
   startProviderLogin(providerId: string, type: "api_key" | "oauth"): string;
   authFlow(id: string): AuthFlowState;
@@ -56,6 +59,7 @@ export async function openRuntime({
   defaultModel,
   providerModels,
   storedProviderIds,
+  skills = [],
 }: {
   database: string;
   workspace: string;
@@ -63,6 +67,7 @@ export async function openRuntime({
   providerModels?: { models: ModelRuntime; deviceId: string };
   storedProviderIds?: () => Promise<readonly string[]>;
   defaultModel?: { provider: string; modelId: string };
+  skills?: readonly { name: string; description: string; filePath: string; baseDir?: string }[];
 }): Promise<Runtime> {
   await Promise.all([mkdir(dirname(database), { recursive: true }), mkdir(workspace, { recursive: true })]);
 
@@ -98,6 +103,16 @@ export async function openRuntime({
   };
 
   return {
+    listSkills: () => skills.map(({ name, description }) => ({ name, description })),
+    async expandSkill(name, request) {
+      const skill = skills.find((candidate) => candidate.name === name);
+      if (!skill) throw new Error(`Unknown skill: ${name}`);
+      const { readFile } = await import("node:fs/promises");
+      const content = await readFile(skill.filePath, "utf8");
+      const instructions = content.replace(/^---\r?\n[\s\S]*?\r?\n---\r?\n/, "").trim();
+      const block = `<skill name="${skill.name}" location="${skill.filePath}">\nReferences are relative to ${skill.baseDir ?? dirname(skill.filePath)}.\n\n${instructions}\n</skill>`;
+      return request ? `${block}\n\n${request}` : block;
+    },
     async listModels() {
       const providers = storedProviderIds ? await storedProviderIds() : undefined;
       return (await models.getAvailable())

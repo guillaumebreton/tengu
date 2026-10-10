@@ -1,4 +1,4 @@
-import { cleanup, render, screen } from "@testing-library/preact";
+import { cleanup, fireEvent, render, screen } from "@testing-library/preact";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { Composer, MessageRow, ToolCall, Transcript } from "./components";
 
@@ -66,6 +66,16 @@ describe("Composer", () => {
     render(<Composer value="" onInput={() => {}} onSubmit={() => {}} models={[{ id: "openai/gpt", label: "openai · GPT" }]} model="openai/gpt" onModelChange={() => {}} />);
 
     expect(screen.getByRole("combobox", { name: "Model" }).closest(".composer-actions")).toBeInTheDocument();
+  });
+
+  it("offers filtered slash commands with keyboard selection", () => {
+    const select = vi.fn();
+    render(<Composer value="/mo" onInput={() => {}} onSubmit={() => {}} models={[]} model="" onModelChange={() => {}} commands={[{ name: "models", description: "Choose model", action: select }]} />);
+
+    expect(screen.getByRole("listbox", { name: "Commands" })).toBeInTheDocument();
+    expect(screen.getByRole("option", { name: /models/ })).toBeInTheDocument();
+    fireEvent.keyDown(screen.getByRole("textbox", { name: "Message Tengu" }), { key: "Enter" });
+    expect(select).toHaveBeenCalled();
   });
 
   it("disables browser writing suggestions", () => {
