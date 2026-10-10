@@ -96,8 +96,9 @@ Styles are plain CSS. There is no full-stack framework, server rendering,
 utility-CSS framework, component library, GraphQL layer, or general-purpose
 client state library.
 
-Messages render as plain text. Markdown can be added later with a small parser
-and sanitizer if the plain transcript proves insufficient.
+Assistant messages render as sanitized GitHub-flavored Markdown. Raw HTML and
+images are removed, and external links open in a separate tab. User messages
+and tool output remain literal text.
 
 ## Runtime
 
@@ -246,8 +247,9 @@ The authenticated user can ask the agent to run arbitrary commands as the
 service account. Tengu does not sandbox untrusted repositories. The
 authentication proxy therefore needs protection comparable to SSH access.
 
-The server limits request sizes, renders messages as plain text, and avoids
-logging prompts, tool output, and credentials by default. The authentication
+The server limits request sizes and avoids logging prompts, tool output, and
+credentials by default. Assistant Markdown is sanitized in the browser before
+it enters the document. The authentication
 proxy is responsible for rejecting untrusted origins before requests reach
 Tengu.
 

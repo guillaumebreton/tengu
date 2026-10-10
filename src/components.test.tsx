@@ -1,6 +1,6 @@
 import { cleanup, render, screen } from "@testing-library/preact";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { ToolCall, Transcript } from "./components";
+import { MessageRow, ToolCall, Transcript } from "./components";
 
 afterEach(cleanup);
 
@@ -30,7 +30,34 @@ describe("Transcript", () => {
       ]}
     />);
 
-    expect([...container.querySelectorAll(".message")].map((node) => node.textContent)).toEqual(["Run ls", "$lssrc", "Done"]);
+    expect([...container.querySelectorAll(".message")].map((node) => node.textContent?.trim())).toEqual(["Run ls", "$lssrc", "Done"]);
+  });
+});
+
+describe("MessageRow", () => {
+  it("renders assistant Markdown", () => {
+    render(<MessageRow message={{ role: "assistant", text: "## Result\n\n- one\n- two\n\n`code`" }} />);
+
+    expect(screen.getByRole("heading", { name: "Result" })).toBeInTheDocument();
+    expect(screen.getAllByRole("listitem")).toHaveLength(2);
+    expect(screen.getByText("code").tagName).toBe("CODE");
+  });
+
+  it("keeps user messages as plain text", () => {
+    render(<MessageRow message={{ role: "user", text: "**not bold**" }} />);
+
+    expect(screen.getByText("**not bold**")).toBeInTheDocument();
+    expect(screen.queryByText("not bold", { selector: "strong" })).not.toBeInTheDocument();
+  });
+
+  it("removes unsafe HTML and links from assistant messages", () => {
+    const { container } = render(<MessageRow message={{ role: "assistant", text: '<script>alert(1)</script>\n\n[bad](javascript:alert(1))\n\n[good](https://example.com)' }} />);
+
+    expect(container.querySelector("script")).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "bad" })).not.toBeInTheDocument();
+    expect(screen.getByText("bad")).not.toHaveAttribute("href");
+    expect(screen.getByRole("link", { name: "good" })).toHaveAttribute("href", "https://example.com");
+    expect(screen.getByRole("link", { name: "good" })).toHaveAttribute("rel", "noopener noreferrer");
   });
 });
 

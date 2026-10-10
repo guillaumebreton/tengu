@@ -2,6 +2,7 @@ import type { ComponentChildren, Ref } from "preact";
 import { useEffect, useRef, useState } from "preact/hooks";
 import type { AuthFlow, Provider } from "./client";
 import type { LiveTool, TranscriptItem } from "./live";
+import { Markdown } from "./markdown";
 
 export type AgentSummary = {
   id: number;
@@ -210,7 +211,9 @@ export function Transcript({
 export function MessageRow({ message }: { message: Message }) {
   return (
     <MessageFrame role={message.role}>
-      <p class={message.error ? "message-error" : undefined}>{message.text}</p>
+      {message.role === "assistant" && !message.error
+        ? <Markdown text={message.text} />
+        : <p class={message.error ? "message-error" : undefined}>{message.text}</p>}
     </MessageFrame>
   );
 }

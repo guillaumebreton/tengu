@@ -9,7 +9,7 @@ buildNpmPackage {
   version = (lib.importJSON ../package.json).version;
   src = lib.cleanSource ../.;
 
-  npmDepsHash = "sha256-4J7XhyzTq/L9kCJpHTHKc8TsejoMtIIEXHMoSphv5z8=";
+  npmDepsHash = "sha256-8dDzlEJL5I2lajrDn41vcXK1qrPKO8eWPOF0qlRCpfA=";
   nativeBuildInputs = [ makeWrapper ];
   nodejs = nodejs_24;
 
